@@ -29,8 +29,8 @@ function contentSecurityPolicy(): Plugin {
 }
 
 /**
- * Where the app is served from: '/' at the root of a host, or a folder such as '/calm-scroll/' for a
- * GitHub Pages project site (BASE_PATH=/calm-scroll/ pnpm build). Routes live in the hash, so any
+ * Where the app is served from: '/' at the root of a host, or a folder such as '/cobalt/' for a
+ * GitHub Pages project site (BASE_PATH=/cobalt/ pnpm build). Routes live in the hash, so any
  * folder works.
  */
 const base = `/${(process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '')}/`.replace('//', '/');

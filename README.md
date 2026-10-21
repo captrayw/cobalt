@@ -1,6 +1,6 @@
 # cobalt
 
-A cobalt app by a color company, [acolorcompany.com](https://acolorcompany.com).
+A cobalt app by a color company, [acolorcompany.com](https://acolorcompany.com). It runs at https://captrayw.github.io/cobalt/.
 
 A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
 
