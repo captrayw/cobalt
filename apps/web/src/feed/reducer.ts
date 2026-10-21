@@ -30,6 +30,7 @@ export function createFeedState(session: Session, mode: LingerMode): FeedState {
     hiddenMs: 0,
     excludedSince: null,
     hidden: false,
+    muted: false,
     breath: 0,
     breaths: [],
     sleep: false,
@@ -91,6 +92,7 @@ function showPage(s: FeedState, index: number, at: number, effects: FeedEffect[]
       lastActivity: at,
       hiddenMs: 0,
       excludedSince: s.hidden ? at : null,
+      muted: false,
       breath: 0,
       breaths: [],
       sleep: false,
@@ -126,7 +128,8 @@ function finish(s: FeedState, at: number, effects: FeedEffect[]): FeedStep {
 function advance(s: FeedState, at: number, effects: FeedEffect[]): FeedStep {
   if (s.index >= s.session.items.length - 1) return finish({ ...s, lastAdvance: at }, at, effects);
   const records = [...s.records, currentRecord(s, at)];
-  if (records.length % CHECKPOINT_EVERY === 0) effects.push({ type: 'checkpoint' });
+  // The page just shown has no time yet, so this checkpoint holds only the finished pages.
+  if (records.length % CHECKPOINT_EVERY === 0) effects.push({ type: 'checkpoint', current: false });
   return showPage({ ...s, records, lastAdvance: at }, s.index + 1, at, effects);
 }
 
@@ -140,7 +143,11 @@ function onNext(s: FeedState, at: number): FeedStep {
     effects.push({ type: 'resumeAudio' });
     cur = closeSpan(cur, at);
   }
-  if (s.status === 'resting') cur = { ...cur, sleep: true };
+  if (s.status === 'resting') {
+    // The context may have been suspended while the screen was off; the swipe or key can resume it.
+    effects.push({ type: 'resumeAudio' });
+    cur = { ...cur, sleep: true };
+  }
   return advance(cur, at, effects);
 }
 
@@ -158,7 +165,10 @@ function onActivity(s: FeedState, at: number, gesture: boolean): FeedStep {
     const resumed = s.hidden ? s : closeSpan(s, at);
     return step(
       { ...resumed, status: 'lingering', lastActivity: at, timer: { kind: 'wake', at: at + REST.wakeBreathDelaySec * 1000 } },
-      [{ type: 'resumeAudio' }],
+      [
+        { type: 'resumeAudio' },
+        { type: 'master', target: MASTER.normal, tc: MASTER_TC.wake },
+      ],
     );
   }
   return step({ ...s, lastActivity: at });
@@ -176,26 +186,42 @@ function onTimer(s: FeedState, kind: 'dwell' | 'breath' | 'wake', at: number): F
       { type: 'master', target: MASTER.silent, tc: MASTER_TC.rest },
     ]);
   }
+  // Hidden for 3 minutes (the screen switched off, another app or tab): the breaths have carried on
+  // as far as the browser allows; now the sound fades and the rhythm waits for the page to return.
+  // Not Rest: the hidden time still stays out of the dwell and the idle clock.
+  if (s.hidden && openSpan(s, at) >= REST.idleSec * 1000) {
+    return step({ ...s, muted: true, timer: null }, [{ type: 'master', target: MASTER.silent, tc: MASTER_TC.rest }]);
+  }
   return playBreath(s, s.breath + 1, at);
 }
 
 function onInterrupted(s: FeedState, at: number): FeedStep {
   if (s.status !== 'showing' && s.status !== 'lingering') return step(s);
-  return step({ ...s, status: 'paused', timer: null, excludedSince: s.excludedSince ?? at });
+  // Fade the master too, so nothing hums under "Tap to resume" if the system brings audio back alone.
+  return step({ ...s, status: 'paused', muted: false, timer: null, excludedSince: s.excludedSince ?? at }, [
+    { type: 'master', target: MASTER.silent, tc: MASTER_TC.end },
+  ]);
 }
 
 function onHidden(s: FeedState, at: number): FeedStep {
   if (s.hidden) return step(s);
   const opensSpan = s.status === 'showing' || s.status === 'lingering' || s.status === 'paused';
   const next = { ...s, hidden: true, excludedSince: opensSpan && s.excludedSince === null ? at : s.excludedSince };
-  return step(next, isActive(s) ? [{ type: 'checkpoint' }] : []);
+  return step(next, isActive(s) ? [{ type: 'checkpoint', current: true }] : []);
 }
 
 function onVisible(s: FeedState, at: number): FeedStep {
   if (!s.hidden) return step(s);
   const next = { ...s, hidden: false };
   // A paused span stays open until the person taps to resume.
-  return step(s.status === 'paused' ? next : closeSpan(next, at));
+  if (s.status === 'paused') return step(next);
+  if (s.muted) {
+    // Back from a long absence: sound returns and the next breath follows 0.4 s later.
+    return step({ ...closeSpan(next, at), muted: false, timer: { kind: 'wake', at: at + REST.wakeBreathDelaySec * 1000 } }, [
+      { type: 'master', target: MASTER.normal, tc: MASTER_TC.wake },
+    ]);
+  }
+  return step(closeSpan(next, at));
 }
 
 export function reduce(s: FeedState, e: FeedEvent): FeedStep {

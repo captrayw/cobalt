@@ -1,9 +1,26 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { openWithClock, rememberOnePage, startSession } from './helpers';
+
+/**
+ * Wait until fades (180 ms text fade-ins, the dim layer's opacity) have finished, so axe sees final
+ * colors. The progress hairline, which runs for the whole planned dwell, is not waited for.
+ */
+async function settled(page: Page) {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => !('animationName' in a) || (a as CSSAnimation).animationName !== 'hairline')
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
+}
 
 /** Serious or critical axe findings on the page as it is now. */
 async function seriousIssues(page: Page) {
+  await settled(page);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   return results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
@@ -47,9 +64,15 @@ for (const colorScheme of ['dark', 'light'] as const) {
       const now = await page.evaluate(() => Date.now());
       await page.clock.pauseAt(now + 3000);
       await page.clock.runFor(200_000);
-      await expect(page.getByText('Resting')).toBeVisible();
+      await expect(page.getByText('Resting', { exact: true })).toBeVisible();
       await page.clock.resume();
       expect(await seriousIssues(page), 'rest').toEqual([]);
+
+      // Paused after an audio interruption: "Tap to resume" over the page color.
+      await page.keyboard.press('ArrowDown');
+      await page.evaluate(() => window.__calm!.getState().feed!.dispatch({ type: 'interrupted', at: performance.now() }));
+      await expect(page.getByText('Tap to resume', { exact: true })).toBeVisible();
+      expect(await seriousIssues(page), 'paused').toEqual([]);
     });
   });
 }

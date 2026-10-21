@@ -44,6 +44,9 @@ class FakeEngine implements AudioEngine {
   fadeDrones(...args: unknown[]) {
     this.record('fadeDrones', args);
   }
+  async sleep() {
+    this.record('sleep', []);
+  }
   onStateChange() {
     return () => {};
   }

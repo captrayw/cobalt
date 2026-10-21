@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { WebAudioEngine, type EngineState } from '../src/index.ts';
 
@@ -34,6 +34,33 @@ describe('WebAudioEngine with a live AudioContext', () => {
     // Calls after close are ignored, and unlocking again reports failure.
     engine.tone(440, engine.now(), 1, 0, 0.4);
     expect(await engine.unlock()).toBe(false);
+    button.remove();
+  });
+
+  it('sleeps during a rest, and schedules no voices on a stopped clock until it runs again', async () => {
+    const engine = new WebAudioEngine();
+    const button = document.createElement('button');
+    let unlocked: Promise<boolean> = Promise.resolve(false);
+    button.addEventListener('click', () => (unlocked = engine.unlock()));
+    document.body.append(button);
+    await userEvent.click(button);
+    expect(await unlocked).toBe(true);
+
+    const ctx = engine.context as AudioContext;
+    const created = vi.spyOn(ctx, 'createOscillator');
+    await engine.sleep();
+    expect(engine.state).toBe('suspended');
+    // Tones queued now would all start together when the clock moves again, so none are made.
+    engine.tone(440, engine.now() + 0.03, 1, -6, 0.4);
+    engine.tone(440, engine.now() + 0.03, 1, -6, 0.4);
+    engine.drones([50], -6, engine.now() + 0.03);
+    expect(created).not.toHaveBeenCalled();
+
+    await userEvent.click(button);
+    expect(await unlocked).toBe(true);
+    engine.tone(440, engine.now() + 0.03, 1, -6, 0.4);
+    expect(created).toHaveBeenCalledTimes(2);
+    await engine.close(0.06, 0.05);
     button.remove();
   });
 });

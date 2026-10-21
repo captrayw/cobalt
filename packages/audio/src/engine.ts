@@ -29,6 +29,8 @@ export interface AudioEngine {
   releaseVoices(timeConstant: number): void;
   /** Fade the drones out with this time constant, as at the end of a preview. */
   fadeDrones(timeConstant: number): void;
+  /** Suspend the context to save power while the feed rests; unlock() resumes it. */
+  sleep(): Promise<void>;
   readonly state: EngineState;
   /** Called whenever the context state changes; returns an unsubscribe function. */
   onStateChange(listener: (state: EngineState) => void): () => void;

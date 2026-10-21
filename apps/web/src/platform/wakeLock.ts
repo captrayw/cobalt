@@ -1,20 +1,26 @@
+import { FEED_UI } from '@calm/core';
+
 /**
- * Keeps the screen on while wanted. Rejections are tolerated, and a lock that resolves after it
- * stopped being wanted is released straight away.
+ * Keeps the screen on while wanted. One request at a time; after a refusal (no user activation,
+ * battery saver) it waits before asking again. A lock that arrives after it stopped being wanted
+ * is released straight away.
  */
 export class WakeLockManager {
   private sentinel: WakeLockSentinel | null = null;
   private wanted = false;
+  private requesting = false;
+  private retryAt = 0;
 
   set(want: boolean): void {
-    if (want === this.wanted) {
-      // The browser drops the lock when the page is hidden; ask again if it is gone.
-      if (want && this.sentinel === null) void this.acquire();
-      return;
+    if (want !== this.wanted) {
+      this.wanted = want;
+      if (!want) {
+        this.drop();
+        return;
+      }
     }
-    this.wanted = want;
-    if (want) void this.acquire();
-    else this.drop();
+    // The browser drops the lock when the page is hidden, so ask again once it is gone.
+    if (want && this.sentinel === null && !this.requesting && Date.now() >= this.retryAt) void this.acquire();
   }
 
   get held(): boolean {
@@ -23,6 +29,7 @@ export class WakeLockManager {
 
   private async acquire(): Promise<void> {
     if (typeof navigator === 'undefined' || !('wakeLock' in navigator)) return;
+    this.requesting = true;
     try {
       const sentinel = await navigator.wakeLock.request('screen');
       if (!this.wanted || this.sentinel !== null) {
@@ -34,7 +41,9 @@ export class WakeLockManager {
         if (this.sentinel === sentinel) this.sentinel = null;
       });
     } catch {
-      // Not allowed right now (no user activation, battery saver, hidden page). Try again later.
+      this.retryAt = Date.now() + FEED_UI.wakeLockRetryMs;
+    } finally {
+      this.requesting = false;
     }
   }
 

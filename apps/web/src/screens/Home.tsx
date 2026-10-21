@@ -1,4 +1,5 @@
 import { baseL, CHROMA, FAMILY_BY_ID, fitChroma, GROUPS, oklchToHex, type LingerMode, type PaceId } from '@calm/core';
+import { useEffect, useRef } from 'react';
 import { navigate } from '../router';
 import { startSession, updateSettings, useApp } from '../store';
 import type { SessionDoc } from '../storage/types';
@@ -33,6 +34,8 @@ function lastLine(last: SessionDoc | null): string {
 }
 
 export function Home() {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus({ preventScroll: true }), []);
   const ready = useApp((s) => s.ready);
   const settings = useApp((s) => s.settings);
   const last = useApp((s) => s.lastSession);
@@ -43,7 +46,9 @@ export function Home() {
     <main className="screen">
       <div className="column">
         <header className="screen-head">
-          <h1>Calm Scroll</h1>
+          <h1 ref={heading} tabIndex={-1}>
+            Calm Scroll
+          </h1>
           <p className="muted">Fifteen minutes of soft color and sound. Stay on a page and it slows into a breathing rhythm.</p>
         </header>
 

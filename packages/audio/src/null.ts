@@ -26,6 +26,8 @@ export class NullAudioEngine implements AudioEngine {
 
   fadeDrones(): void {}
 
+  async sleep(): Promise<void> {}
+
   onStateChange(): () => void {
     return () => {};
   }

@@ -1,5 +1,6 @@
 import type { AudioEngine, EngineState } from '@calm/audio';
-import { MASTER_TC, SCHEDULE, VOICE_RELEASE_TC, type DwellRecord, type LingerMode, type Page, type PaceId, type Session } from '@calm/core';
+import { FADE_TCS, FEED_UI, MASTER_TC, SCHEDULE, VOICE_RELEASE_TC, type DwellRecord, type LingerMode, type Page, type PaceId, type Session } from '@calm/core';
+import { watchPageHide, watchVisibility } from '../platform/visibility';
 import { WakeLockManager } from '../platform/wakeLock';
 import type { SessionDoc, SessionRecordDoc, SessionStatus } from '../storage/types';
 import { createFeedState, currentRecord, dimFor, isActive, reduce } from './reducer';
@@ -68,7 +69,12 @@ export class FeedController {
   private readonly wake: Pick<WakeLockManager, 'set'>;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private timerFor: FeedTimer | null = null;
-  private audioWasRunning = false;
+  /** Audio has run at least once this session; only then can a stopped context pause the feed. */
+  private audioRan = false;
+  /** An unlock or resume is in flight. */
+  private resuming = false;
+  /** Suspends the context once a rest has faded out. */
+  private restSleep: ReturnType<typeof setTimeout> | null = null;
   private wallStart = 0;
   private detachers: (() => void)[] = [];
 
@@ -106,40 +112,89 @@ export class FeedController {
     this.engine.setVolume(db);
   }
 
-  next = (): void => this.dispatch({ type: 'next', at: this.now() });
+  next = (): void => {
+    this.resumeIfStopped();
+    this.dispatch({ type: 'next', at: this.now() });
+  };
   end = (): void => this.dispatch({ type: 'end', at: this.now() });
-  activity = (gesture: boolean): void => this.dispatch({ type: 'activity', at: this.now(), gesture });
+  activity = (gesture: boolean): void => {
+    if (gesture) this.resumeIfStopped();
+    this.dispatch({ type: 'activity', at: this.now(), gesture });
+  };
 
   dispatch(event: FeedEvent): void {
     const { state, effects } = reduce(this.s, event);
     if (state === this.s && effects.length === 0) return;
+    const was = this.s.status;
     this.s = state;
     this.syncTimer();
     // The screen stays on in Showing and Lingering while the page is visible; resting lets it sleep.
     this.wake.set(!state.hidden && (state.status === 'showing' || state.status === 'lingering'));
+    if (state.status !== was) this.syncRestSleep();
     this.run(effects);
     const view = this.computeView();
     if (!sameView(view, this.view)) {
       this.view = view;
       for (const listener of this.listeners) listener();
     }
+    this.checkAudio();
+  }
+
+  /**
+   * In Showing or Lingering, an audio context that has run before but is not running now (a call,
+   * another app, a resume that failed, or an interruption while resting) moves the feed to Paused,
+   * which shows "Tap to resume". A resume still in flight is given time to finish.
+   */
+  private checkAudio(): void {
+    const status = this.s.status;
+    if (status !== 'showing' && status !== 'lingering') return;
+    if (!this.audioRan || this.resuming) return;
+    const audio: EngineState = this.engine.state;
+    if (audio === 'suspended' || audio === 'interrupted') this.dispatch({ type: 'interrupted', at: this.now() });
+  }
+
+  /** Create or resume the context. A resume that has not settled after a while counts as failed. */
+  private unlockAudio(): void {
+    if (this.resuming) return;
+    this.resuming = true;
+    const settled = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), FEED_UI.resumeTimeoutMs));
+    void Promise.race([this.engine.unlock(), settled]).then((running) => {
+      this.resuming = false;
+      if (running || this.engine.state === 'running') this.audioRan = true;
+      else this.checkAudio();
+    });
+  }
+
+  /** A tap, key or swipe is a chance to bring back audio that stopped (a call, a locked screen). */
+  private resumeIfStopped(): void {
+    const audio: EngineState = this.engine.state;
+    if (this.audioRan && (audio === 'suspended' || audio === 'interrupted')) this.unlockAudio();
+  }
+
+  /** While resting, suspend the context once the master has faded out, to save battery. */
+  private syncRestSleep(): void {
+    if (this.restSleep !== null) clearTimeout(this.restSleep);
+    this.restSleep = null;
+    if (this.s.status !== 'resting') return;
+    this.restSleep = setTimeout(() => {
+      this.restSleep = null;
+      if (this.s.status === 'resting') void this.engine.sleep();
+    }, FADE_TCS * MASTER_TC.rest * 1000);
   }
 
   /** Watch page visibility, pagehide and the audio context. Returns a function that stops watching. */
   attach(): () => void {
-    const onVisibility = () => this.dispatch({ type: document.visibilityState === 'hidden' ? 'hidden' : 'visible', at: this.now() });
-    const onPageHide = () => this.dispatch({ type: 'end', at: this.now() });
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pagehide', onPageHide);
-    const offAudio = this.engine.onStateChange((state: EngineState) => {
-      if (state === 'running') this.audioWasRunning = true;
-      else if (this.audioWasRunning && (state === 'suspended' || state === 'interrupted')) {
-        this.audioWasRunning = false;
-        this.dispatch({ type: 'interrupted', at: this.now() });
-      }
+    const offVisibility = watchVisibility((hidden) => this.dispatch({ type: hidden ? 'hidden' : 'visible', at: this.now() }));
+    const offPageHide = watchPageHide(() => {
+      // Writes started while the page unloads may not finish, so save what is known first, then end.
+      if (isActive(this.s)) this.hooks.checkpoint(this.buildDoc('open', true));
+      this.dispatch({ type: 'end', at: this.now() });
     });
-    if (document.visibilityState === 'hidden') onVisibility();
-    this.detachers = [() => document.removeEventListener('visibilitychange', onVisibility), () => window.removeEventListener('pagehide', onPageHide), offAudio];
+    const offAudio = this.engine.onStateChange((state: EngineState) => {
+      if (state === 'running') this.audioRan = true;
+      else this.checkAudio();
+    });
+    this.detachers = [offVisibility, offPageHide, offAudio];
     return () => this.detach();
   }
 
@@ -152,16 +207,24 @@ export class FeedController {
   dispose(): void {
     this.detach();
     if (this.timer !== null) clearTimeout(this.timer);
+    if (this.restSleep !== null) clearTimeout(this.restSleep);
     this.timer = null;
+    this.restSleep = null;
     this.wake.set(false);
   }
 
-  /** The session as a stored document. An open checkpoint includes the page on screen so far. */
-  buildDoc(status: SessionStatus): SessionDoc {
+  /**
+   * The session as a stored document. With `current`, an open checkpoint also records the page on
+   * screen so far. An open checkpoint's endedAt is its own time, the last moment the session is
+   * known to have run.
+   */
+  buildDoc(status: SessionStatus, current = false): SessionDoc {
     const s = this.s;
+    const now = this.now();
     const records = [...s.records];
-    if (status === 'open' && isActive(s)) records.push(currentRecord(s, this.now()));
+    if (current && isActive(s)) records.push(currentRecord(s, now));
     const { session } = this.setup;
+    const end = s.endedAt ?? (status === 'open' ? now : null);
     return {
       v: 1,
       id: this.setup.id,
@@ -174,7 +237,7 @@ export class FeedController {
       inserted: session.inserted,
       pages: session.items.length,
       startedAt: this.wallStart,
-      endedAt: s.endedAt === null ? null : Math.round(this.wallStart + (s.endedAt - s.startedAt)),
+      endedAt: end === null ? null : Math.round(this.wallStart + (end - s.startedAt)),
       status,
       records: records.map(toRecordDoc),
       totals: null,
@@ -216,9 +279,7 @@ export class FeedController {
       switch (fx.type) {
         case 'unlockAudio':
         case 'resumeAudio':
-          void this.engine.unlock().then((running) => {
-            if (running) this.audioWasRunning = true;
-          });
+          this.unlockAudio();
           break;
         case 'tone':
           this.engine.tone(fx.hz, at(), fx.dur, fx.gainDb, fx.inhale);
@@ -233,12 +294,11 @@ export class FeedController {
           this.engine.setMaster(fx.target, fx.tc);
           break;
         case 'checkpoint':
-          this.hooks.checkpoint(this.buildDoc('open'));
+          this.hooks.checkpoint(this.buildDoc('open', fx.current));
           break;
         case 'finish':
           this.detach();
           this.wake.set(false);
-          this.audioWasRunning = false;
           void this.engine.close(MASTER_TC.end);
           this.hooks.finish(this.buildDoc('done'));
           break;

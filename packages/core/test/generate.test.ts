@@ -41,7 +41,9 @@ describe('generator', () => {
       }
       expect(failures).toBe(0);
       // A first draw fails about 3 times in 100,000 at the standard preset (pitchFalls between
-      // groups 1 and 2) and about 1% of the time at the measured preset; a second draw passes.
+      // groups 1 and 2) and about 1% of the time at the measured preset. Two failures in a row
+      // then happen about once in 10,000 seeds, so a third draw is rare but expected here; the
+      // brief's "never more than two" covered 5,000 seeds.
       expect(maxTries).toBeLessThanOrEqual(name === 'standard' ? 2 : 3);
     });
   }
@@ -140,6 +142,12 @@ describe('generator', () => {
     expect(s.items).toEqual(generate({ seed: s.seed, ...PACE_PRESETS.measured }));
     expect(s.opts).toEqual({ ...PACE_PRESETS.measured, totalSec: 900 });
     expect(s.inserted).toBe(0);
+  });
+
+  it('refuses a pace that could plan a page under 2 s', () => {
+    expect(() => generate({ seed: 1, minDwell: 3.9, maxDwell: 10 })).toThrow(RangeError);
+    expect(() => generate({ seed: 1, minDwell: 8, maxDwell: 6 })).toThrow(RangeError);
+    expect(() => generate({ seed: 1, minDwell: 4, maxDwell: 8 })).not.toThrow();
   });
 
   it('wraps seed + 1 around 2^32', () => {

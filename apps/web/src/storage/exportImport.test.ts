@@ -79,6 +79,19 @@ describe('export and import', () => {
     expect(snap.memory).toEqual(before);
   });
 
+  it('leaves out an open session found in a file, so it is never learned at the next launch', async () => {
+    const repo = await populated();
+    const file = await exportAll(repo, T0);
+    const tampered: ExportFile = { ...file, sessions: [...file.sessions, makeSessionDoc({ seed: 31, startedAt: T0 + 30_000_000, lingerEvery: 5 })] };
+    const check = checkImport(exportJson(tampered));
+    expect(check.ok).toBe(true);
+    if (!check.ok) return;
+    const { repo: target } = freshRepo();
+    await applyImport(target, check.file, T0 + 31_000_000);
+    expect(await target.openSessions()).toEqual([]);
+    expect(await target.recentSessions()).toHaveLength(3);
+  });
+
   it('fills settings missing from an older file with their defaults', async () => {
     const repo = await populated();
     const file = await exportAll(repo, T0);

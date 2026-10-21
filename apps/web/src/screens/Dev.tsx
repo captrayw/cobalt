@@ -146,7 +146,7 @@ export function Dev() {
                       <td>{p.catName}</td>
                       <td>
                         <span className="row" style={{ gap: 6 }}>
-                          <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: 3, background: p.hex }} aria-hidden="true" />
+                          <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: 'var(--radius)', background: p.hex }} aria-hidden="true" />
                           {p.hex}
                         </span>
                       </td>

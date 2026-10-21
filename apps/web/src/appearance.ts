@@ -6,16 +6,28 @@ const LIGHT_QUERY = '(prefers-color-scheme: light)';
 /** The bg token of each theme, for the browser's status bar. */
 const THEME_BG = { dark: '#090C12', light: '#F1F3F7' } as const;
 
+// One MediaQueryList per query, made once: reading .matches is cheap, matchMedia() is not, and the
+// feed reads the motion preference on every page change.
+const queries = new Map<string, MediaQueryList>();
+const mediaQuery = (media: string): MediaQueryList => {
+  let query = queries.get(media);
+  if (!query) {
+    query = window.matchMedia(media);
+    queries.set(media, query);
+  }
+  return query;
+};
+
 const subscribeTo = (media: string) => (onChange: () => void) => {
-  const query = window.matchMedia(media);
+  const query = mediaQuery(media);
   query.addEventListener('change', onChange);
   return () => query.removeEventListener('change', onChange);
 };
 const subscribeReduce = subscribeTo(REDUCE_QUERY);
 const subscribeLight = subscribeTo(LIGHT_QUERY);
 
-const systemReduces = () => window.matchMedia(REDUCE_QUERY).matches;
-const systemLight = () => window.matchMedia(LIGHT_QUERY).matches;
+const systemReduces = () => mediaQuery(REDUCE_QUERY).matches;
+const systemLight = () => mediaQuery(LIGHT_QUERY).matches;
 
 /** True when colors should switch instantly and nothing should slide. */
 export function useReducedMotion(): boolean {

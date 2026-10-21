@@ -14,7 +14,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
-import { initApp } from './store';
+import { initApp, useApp } from './store';
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
@@ -24,5 +24,22 @@ createRoot(document.getElementById('root') as HTMLElement).render(
 
 void initApp();
 
-// Offline support: precache the app shell and assets. Updates apply on the next launch.
-if (import.meta.env.PROD) registerSW({ immediate: true });
+// Offline support: the service worker precaches the app shell and assets. A new version waits, and
+// is applied (with a reload) only between sessions while the app is in the background, so it never
+// cuts a session short. Closing every window also applies it, as usual.
+if (import.meta.env.PROD) {
+  let updateWaiting = false;
+  const applyUpdate = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      updateWaiting = true;
+      applyWhenIdle();
+    },
+  });
+  function applyWhenIdle() {
+    const feed = useApp.getState().feed;
+    const sessionRunning = feed !== null && feed.state.status !== 'ended';
+    if (updateWaiting && !sessionRunning && document.visibilityState === 'hidden') void applyUpdate(true);
+  }
+  document.addEventListener('visibilitychange', applyWhenIdle);
+}

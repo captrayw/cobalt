@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test.describe('installable, offline and private', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'Service workers are checked in Chromium.');

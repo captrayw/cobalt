@@ -9,6 +9,7 @@ import {
   LIGHTNESS,
   MAX_DRAWS,
   MELODY,
+  MIN_PAGE_SEC,
   NOTE_CHOICE,
   SESSION_SEC,
   TWO_BACK_DAMPING,
@@ -69,6 +70,10 @@ function nearestNote(pool: readonly number[], prev: number): number {
  */
 export function generate(opts: GenerateOptions): Page[] {
   const { minDwell, maxDwell, bias } = opts;
+  // The shortest possible page is the last one, at half of minDwell; it may never go under 2 s.
+  if (!(minDwell / 2 >= MIN_PAGE_SEC && maxDwell >= minDwell)) {
+    throw new RangeError(`Pages must be planned for at least ${MIN_PAGE_SEC} s: minDwell ${minDwell}, maxDwell ${maxDwell}.`);
+  }
   const rng = mulberry32(opts.seed);
   const items: Page[] = [];
   let t = 0;

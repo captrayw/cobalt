@@ -144,18 +144,53 @@ describe('feed reducer', () => {
     const r = new Replay();
     r.send({ type: 'start' });
     r.wait(2_000);
-    r.send({ type: 'interrupted' });
+    const paused = r.send({ type: 'interrupted' });
     expect(r.state.status).toBe('paused');
     expect(r.state.timer).toBeNull();
+    // The master fades too, so nothing hums under "Tap to resume" if audio comes back on its own.
+    expect(paused.effects).toEqual([{ type: 'master', target: 0.0001, tc: 0.08 }]);
     r.wait(30_000);
     r.send({ type: 'activity', gesture: false });
     expect(r.state.status).toBe('paused');
     const { effects } = r.send({ type: 'activity', gesture: true });
-    expect(effects).toEqual([{ type: 'resumeAudio' }]);
+    expect(effects).toEqual([{ type: 'resumeAudio' }, { type: 'master', target: 0.9, tc: 0.5 }]);
     expect(r.state.status).toBe('lingering');
     r.wait(400);
     expect(r.state.breath).toBe(1);
     expect(dwellSec(r.state, r.clock)).toBeCloseTo(2.4, 6);
+  });
+
+  it('hidden for 3 minutes while lingering: the sound fades and the breaths wait, without resting', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(10_000);
+    r.send({ type: 'hidden' });
+    r.wait(180_000);
+    const breaths = r.state.breath;
+    r.wait(15_000);
+    expect(r.state.status).toBe('lingering');
+    expect(r.state.muted).toBe(true);
+    expect(r.state.timer).toBeNull();
+    expect(r.effects).toContainEqual({ type: 'master', target: 0.0001, tc: 8 });
+    r.wait(3_600_000);
+    expect(r.state.breath).toBeLessThanOrEqual(breaths + 1);
+    const back = r.send({ type: 'visible' });
+    expect(back.effects).toEqual([{ type: 'master', target: 0.9, tc: 0.5 }]);
+    expect(r.state.muted).toBe(false);
+    const before = r.state.breath;
+    r.wait(400);
+    expect(r.state.breath).toBe(before + 1);
+    r.send({ type: 'next' });
+    // All the hidden time stays out of the dwell.
+    expect(r.state.records[0].dwell).toBeCloseTo(10.4, 6);
+  });
+
+  it('Next from Resting tries to resume audio, which may have been suspended with the screen off', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(200_000);
+    expect(r.state.status).toBe('resting');
+    expect(r.send({ type: 'next' }).effects[0]).toEqual({ type: 'resumeAudio' });
   });
 
   it('Next from Paused resumes audio, closes the paused span and records the page', () => {
@@ -177,9 +212,13 @@ describe('feed reducer', () => {
       r.wait(1000);
       r.send({ type: 'next' });
     }
-    expect(r.effects.filter((e) => e.type === 'checkpoint')).toHaveLength(1);
+    // Every 10 pages, only finished pages; on hide, the page on screen too.
+    expect(r.effects.filter((e) => e.type === 'checkpoint')).toEqual([{ type: 'checkpoint', current: false }]);
     r.send({ type: 'hidden' });
-    expect(r.effects.filter((e) => e.type === 'checkpoint')).toHaveLength(2);
+    expect(r.effects.filter((e) => e.type === 'checkpoint')).toEqual([
+      { type: 'checkpoint', current: false },
+      { type: 'checkpoint', current: true },
+    ]);
   });
 
   it('End records the page on screen and finishes; the last page ends on Next', () => {

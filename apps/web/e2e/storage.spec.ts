@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { feed, openWithClock, pressDownTimes, rememberOnePage, startSession } from './helpers';
 
 test('an app closed mid-session is scored and learned as a partial session at the next launch', async ({ page }) => {
@@ -18,7 +18,8 @@ test('an app closed mid-session is scored and learned as a partial session at th
   await page.goto('about:blank');
 
   await page.goto('/');
-  await expect(page.getByTestId('last-session')).toContainText('Last session: 11 pages');
+  // The checkpoint holds the 10 finished pages (the page just shown had no time yet).
+  await expect(page.getByTestId('last-session')).toContainText('Last session: 10 pages');
   const after = await page.evaluate(async () => {
     const repo = window.__calm!.getState().repo!;
     const [open, last, memory] = await Promise.all([repo.openSessions(), repo.lastSession(), repo.loadMemory()]);

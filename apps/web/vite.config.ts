@@ -33,7 +33,9 @@ export default defineConfig({
     react(),
     contentSecurityPolicy(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // A new version waits until the app applies it between sessions (see main.tsx), so an update
+      // never reloads the page in the middle of a session.
+      registerType: 'prompt',
       injectRegister: false,
       // The glob below already precaches every public file, icons included.
       includeManifestIcons: false,
@@ -49,7 +51,8 @@ export default defineConfig({
         orientation: 'portrait',
         background_color: '#090C12',
         theme_color: '#090C12',
-        categories: ['health', 'lifestyle'],
+        // A relaxation aid: no health category, so no store listing implies a medical purpose.
+        categories: ['lifestyle'],
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -62,7 +65,6 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // Take control on the first visit, so the app works offline from then on.
         clientsClaim: true,
-        skipWaiting: true,
       },
     }),
   ],

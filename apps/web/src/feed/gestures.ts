@@ -1,4 +1,4 @@
-import { INPUT } from '@calm/core';
+import { FEED_UI, INPUT } from '@calm/core';
 
 /** What an input means to the feed. */
 export type InputAction = 'next' | 'end' | 'activity' | 'ignore';
@@ -51,12 +51,9 @@ export function wheelAction(state: WheelState, at: number, deltaY: number, delta
   return [{ last: at, advanced }, 'activity'];
 }
 
-/** Movement under this many pixels counts as a tap. */
-const TAP_SLOP_PX = 10;
-
 /** A finished pointer gesture: a swipe up of more than 40 px moves on; a still press is a tap. */
 export function pointerAction(dx: number, dy: number): 'next' | 'tap' | 'activity' {
   if (-dy > INPUT.swipePx) return 'next';
-  if (Math.abs(dx) < TAP_SLOP_PX && Math.abs(dy) < TAP_SLOP_PX) return 'tap';
+  if (Math.abs(dx) < FEED_UI.tapSlopPx && Math.abs(dy) < FEED_UI.tapSlopPx) return 'tap';
   return 'activity';
 }

@@ -35,8 +35,9 @@ export type CalmDb = IDBPDatabase<CalmSchema>;
 /**
  * Opens (and creates or upgrades) the database. Pass a factory to isolate tests; otherwise the
  * browser's indexedDB is used. Forward store migrations go in the upgrade step, one block per version.
+ * `onClose` runs when the connection ends: another tab upgrading, or the browser dropping it.
  */
-export function openCalmDb(name: string = DB_NAME, factory?: IDBFactory): Promise<CalmDb> {
+export function openCalmDb(name: string = DB_NAME, factory?: IDBFactory, onClose?: () => void): Promise<CalmDb> {
   const request = (factory ?? indexedDB).open(name, DB_VERSION);
   request.addEventListener('upgradeneeded', (event) => {
     const db = wrap(request.result) as unknown as CalmDb;
@@ -52,7 +53,12 @@ export function openCalmDb(name: string = DB_NAME, factory?: IDBFactory): Promis
   return (wrap(request) as Promise<unknown>).then((value) => {
     const db = value as CalmDb;
     // Let a newer version of the app (another tab) upgrade the schema.
-    db.addEventListener('versionchange', () => db.close());
+    db.addEventListener('versionchange', () => {
+      db.close();
+      onClose?.();
+    });
+    // The browser can drop the connection, for example when site data is cleared.
+    db.addEventListener('close', () => onClose?.());
     return db;
   });
 }

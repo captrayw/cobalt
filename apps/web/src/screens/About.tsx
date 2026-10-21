@@ -111,7 +111,7 @@ export function About() {
             <Refs n={[5]} />
           </li>
           <li>
-            At night, lower your screen brightness. Blue light is the strongest signal for staying awake.
+            At night, lower your screen brightness. Blue light holds back melatonin, the hormone that eases sleep, more than any other color.
             <Refs n={[6]} />
           </li>
           <li>Sessions end. There are no streaks, badges, notifications or endless feed.</li>
@@ -124,8 +124,8 @@ export function About() {
           {SOURCES.map((s) => (
             <li key={s.n} value={s.n}>
               {s.cite}{' '}
-              <a href={s.url} target="_blank" rel="noreferrer noopener">
-                Link
+              <a className="source-link" href={s.url} target="_blank" rel="noreferrer noopener">
+                Link<span className="sr-only"> to source {s.n}, opens in a new tab</span>
               </a>
             </li>
           ))}

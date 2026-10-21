@@ -18,7 +18,7 @@ export interface AppState {
   feed: FeedController | null;
   /** The session shown on the Summary screen. */
   summary: SessionDoc | null;
-  /** Plain-language note when storage is unavailable or a save failed. */
+  /** Plain-language note when storage is unavailable or a save failed; cleared by the next good save. */
   storageNote: string | null;
 }
 
@@ -34,22 +34,66 @@ export const useApp = create<AppState>(() => ({
 }));
 
 const NO_STORAGE = 'This browser is not letting Calm Scroll store data, so sessions will not be remembered.';
+const NOT_SAVED = 'This session could not be saved on this device.';
 
-// QA hook for the end-to-end tests and the developer screen: read-only access to app state and the core.
+/**
+ * QA hook for the end-to-end tests: app state and the core, in development or when a test has set
+ * sessionStorage "calm-qa". Production pages do not expose it otherwise.
+ */
 declare global {
   interface Window {
     __calm?: { getState: typeof useApp.getState; core: typeof core };
   }
 }
-if (typeof window !== 'undefined') window.__calm = { getState: useApp.getState, core };
+function qaEnabled(): boolean {
+  if (import.meta.env.DEV) return true;
+  try {
+    return sessionStorage.getItem('calm-qa') === '1';
+  } catch {
+    return false;
+  }
+}
+if (typeof window !== 'undefined' && qaEnabled()) window.__calm = { getState: useApp.getState, core };
+
+/** A running session holds a lock named after it, so another tab's recovery leaves it alone. */
+const lockName = (id: string) => `calm-scroll-session-${id}`;
+const releaseLocks = new Map<string, () => void>();
+
+async function isSessionLive(id: string): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.locks?.query) return false;
+  try {
+    const { held = [] } = await navigator.locks.query();
+    return held.some((lock) => lock.name === lockName(id));
+  } catch {
+    return false;
+  }
+}
+
+function holdSessionLock(id: string): void {
+  if (typeof navigator === 'undefined' || !navigator.locks?.request) return;
+  void navigator.locks
+    .request(lockName(id), () => new Promise<void>((resolve) => releaseLocks.set(id, resolve)))
+    .catch(() => undefined);
+}
+
+function releaseSessionLock(id: string): void {
+  releaseLocks.get(id)?.();
+  releaseLocks.delete(id);
+}
+
+/** Settings changed before storage opened, saved once it has. */
+let pendingSettings: Partial<Settings> = {};
 
 /** Open storage, finish any session a closed app left open, and load settings and memory. */
 export async function initApp(): Promise<void> {
   try {
     const repo = createRepo();
-    const recovered = await recoverOpenSessions(repo, Date.now()).catch(() => 0);
-    const [settings, memory, lastSession] = await Promise.all([repo.loadSettings(), repo.loadMemory(), repo.lastSession()]);
-    useApp.setState({ ready: true, repo, settings, memory, lastSession });
+    const recovered = await recoverOpenSessions(repo, Date.now(), isSessionLive).catch(() => 0);
+    const [stored, memory, lastSession] = await Promise.all([repo.loadSettings(), repo.loadMemory(), repo.lastSession()]);
+    const early = pendingSettings;
+    pendingSettings = {};
+    useApp.setState({ ready: true, repo, settings: { ...stored, ...early }, memory, lastSession });
+    if (Object.keys(early).length > 0) await repo.saveSettings(early).catch(() => useApp.setState({ storageNote: NO_STORAGE }));
     if (recovered > 0) console.info(`Calm Scroll: scored ${recovered} unfinished session(s) from last time.`);
   } catch (error) {
     console.warn('Calm Scroll storage unavailable', error);
@@ -58,12 +102,18 @@ export async function initApp(): Promise<void> {
 }
 
 export async function updateSettings(patch: Partial<Settings>): Promise<void> {
-  const { repo, settings, feed } = useApp.getState();
-  const next = { ...settings, ...patch };
-  useApp.setState({ settings: next });
+  const { repo, ready, settings, feed } = useApp.getState();
+  useApp.setState({ settings: { ...settings, ...patch } });
   if (patch.volumeDb !== undefined) feed?.setVolume(patch.volumeDb);
+  if (!ready) {
+    pendingSettings = { ...pendingSettings, ...patch };
+    return;
+  }
+  if (!repo) return;
   try {
-    if (repo) useApp.setState({ settings: await repo.saveSettings(patch) });
+    // The change is already on screen; the stored copy is not read back over newer changes.
+    await repo.saveSettings(patch);
+    if (useApp.getState().storageNote === NO_STORAGE) useApp.setState({ storageNote: null });
   } catch {
     useApp.setState({ storageNote: NO_STORAGE });
   }
@@ -94,8 +144,9 @@ export function startSession(): void {
   }
   const { settings, memory } = state;
   const session = prepareValidSession({ ...PACE_PRESETS[settings.pace], memory, useMemory: settings.useMemory }, newSeed);
+  const id = ulid(Date.now());
   const feed = new FeedController(
-    { id: ulid(Date.now()), session, mode: settings.lingerMode, pace: settings.pace, useMemory: settings.useMemory },
+    { id, session, mode: settings.lingerMode, pace: settings.pace, useMemory: settings.useMemory },
     {
       engine: createEngine(settings.volumeDb),
       hooks: {
@@ -106,6 +157,7 @@ export function startSession(): void {
       },
     },
   );
+  holdSessionLock(id);
   useApp.setState({ feed, summary: null });
   feed.start();
   navigate('feed');
@@ -113,13 +165,18 @@ export function startSession(): void {
 
 /** Score and learn from a finished session, show the summary, then save memory and the session together. */
 async function finishSession(doc: SessionDoc): Promise<void> {
-  const { memory, repo } = useApp.getState();
-  const result = finalizeSession(memory, doc, Date.now(), 'done');
+  const { memory: before, repo } = useApp.getState();
+  const result = finalizeSession(before, doc, Date.now(), 'done');
   navigate('summary', true);
   useApp.setState({ memory: result.memory, summary: result.doc, lastSession: result.doc, feed: null });
   try {
     await repo?.finishSession(result.memory, result.doc);
+    if (useApp.getState().storageNote === NOT_SAVED) useApp.setState({ storageNote: null });
   } catch {
-    useApp.setState({ storageNote: 'This session could not be saved on this device.' });
+    // Memory goes back to what is stored, so this session is never learned twice: if a checkpoint
+    // of it was saved, the next launch recovers it.
+    useApp.setState({ memory: before, storageNote: NOT_SAVED });
+  } finally {
+    releaseSessionLock(doc.id);
   }
 }

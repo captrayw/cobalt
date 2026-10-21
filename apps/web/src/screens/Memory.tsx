@@ -83,7 +83,22 @@ export function MemoryScreen() {
   const [pending, setPending] = useState<{ file: ExportFile; summary: ImportSummary } | null>(null);
   const [resetArmed, setResetArmed] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  /** One data action at a time; a failure is reported plainly instead of being lost. */
+  const run = async (task: () => Promise<void>, failure: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await task();
+    } catch (error) {
+      console.warn(error);
+      setMessage(failure);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const pages = Object.values(memory.pages).sort((a, b) => scoreMean(b) - scoreMean(a) || b.lingers - a.lingers);
   const loops = memory.loops.filter((l) => !l.sim);
@@ -98,47 +113,52 @@ export function MemoryScreen() {
     setProgress(null);
   };
 
-  const onExport = async () => {
-    if (!repo) return;
-    const at = Date.now();
-    const url = URL.createObjectURL(new Blob([exportJson(await exportAll(repo, at))], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = exportFileName(at);
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setMessage('Exported. The file holds your memory, sessions and settings.');
-  };
+  const onExport = () =>
+    run(async () => {
+      if (!repo) return;
+      const at = Date.now();
+      const url = URL.createObjectURL(new Blob([exportJson(await exportAll(repo, at))], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = exportFileName(at);
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMessage('Exported. The file holds your memory, sessions and settings.');
+    }, 'The export could not be made. Please try again.');
 
-  const onPickFile = async (e: ChangeEvent<HTMLInputElement>) => {
+  const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    const check = checkImport(await file.text());
-    setResetArmed(false);
-    if (check.ok) {
-      setPending({ file: check.file, summary: check.summary });
-      setMessage(null);
-    } else {
+    return run(async () => {
+      const check = checkImport(await file.text());
+      setResetArmed(false);
+      if (check.ok) {
+        setPending({ file: check.file, summary: check.summary });
+        setMessage(null);
+      } else {
+        setPending(null);
+        setMessage(check.error);
+      }
+    }, 'This file could not be read.');
+  };
+
+  const onConfirmImport = () =>
+    run(async () => {
+      if (!repo || !pending) return;
+      await applyImport(repo, pending.file, Date.now());
       setPending(null);
-      setMessage(check.error);
-    }
-  };
+      await reloadFromRepo();
+      setMessage('Imported. A copy of your previous memory was kept on this device.');
+    }, 'The import did not finish, so nothing was changed.');
 
-  const onConfirmImport = async () => {
-    if (!repo || !pending) return;
-    await applyImport(repo, pending.file, Date.now());
-    setPending(null);
-    await reloadFromRepo();
-    setMessage('Imported. A copy of your previous memory was kept on this device.');
-  };
-
-  const onConfirmReset = async () => {
-    if (repo) await repo.reset(Date.now());
-    useApp.setState({ memory: emptyMemory(), lastSession: null });
-    setResetArmed(false);
-    setMessage('Memory cleared. Settings are unchanged.');
-  };
+  const onConfirmReset = () =>
+    run(async () => {
+      if (repo) await repo.reset(Date.now());
+      useApp.setState({ memory: emptyMemory(), lastSession: null });
+      setResetArmed(false);
+      setMessage('Memory cleared. Settings are unchanged.');
+    }, 'The reset did not finish, so nothing was changed.');
 
   return (
     <Screen title="Memory" intro="Pages you stayed on much longer than their neighbors. Scores fade 15% each session, and everything stays on this device.">
@@ -199,10 +219,10 @@ export function MemoryScreen() {
         <h2 id="data-heading">Your data</h2>
         <p className="muted small">Export saves one file with your memory, sessions and settings. Import replaces them, after you confirm.</p>
         <div className="btn-row">
-          <button type="button" className="btn" onClick={() => void onExport()} disabled={!repo}>
+          <button type="button" className="btn" onClick={() => void onExport()} disabled={!repo || busy}>
             Export
           </button>
-          <button type="button" className="btn" onClick={() => fileInput.current?.click()} disabled={!repo}>
+          <button type="button" className="btn" onClick={() => fileInput.current?.click()} disabled={!repo || busy}>
             Import
           </button>
         </div>
@@ -216,7 +236,7 @@ export function MemoryScreen() {
               device. A copy of your current memory is kept first.
             </p>
             <div className="btn-row">
-              <button type="button" className="btn" onClick={() => void onConfirmImport()}>
+              <button type="button" className="btn" onClick={() => void onConfirmImport()} disabled={busy}>
                 Replace my data
               </button>
               <button type="button" className="btn" onClick={() => setPending(null)}>
@@ -231,7 +251,7 @@ export function MemoryScreen() {
           <div className="stack" role="group" aria-label="Confirm reset">
             <p className="small">This clears remembered pages and stored sessions. Settings stay as they are.</p>
             <div className="btn-row">
-              <button type="button" className="btn btn-danger" onClick={() => void onConfirmReset()} data-testid="reset-confirm">
+              <button type="button" className="btn btn-danger" onClick={() => void onConfirmReset()} disabled={busy} data-testid="reset-confirm">
                 Reset now
               </button>
               <button type="button" className="btn" onClick={() => setResetArmed(false)}>

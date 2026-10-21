@@ -1,4 +1,6 @@
+import { hexToRgb8, oklchToHex } from './color.ts';
 import {
+  CHROMA,
   DECAY,
   FEATURE_MULTIPLIER,
   GROUP_CAP,
@@ -6,10 +8,11 @@ import {
   LIGHTNESS,
   MELODY,
   MEMORY_CAPS,
+  MEMORY_HEX_TOLERANCE,
   PRIORS,
   SCORING,
 } from './constants.ts';
-import { GROUPS, midiToHz, noteName } from './model.ts';
+import { FAMILY_BY_ID, GROUPS, midiToHz, noteName } from './model.ts';
 import type { Rng } from './rng.ts';
 import type { Bias, DwellRecord, FeatureScore, LoopLog, Memory, Page, PageMemory, ScoredRecord, Session } from './types.ts';
 import { validate } from './validate.ts';
@@ -220,12 +223,35 @@ export function betaSample(rng: Rng, a: number, b: number): number {
 }
 
 /**
+ * A remembered page may return only while it still fits the arc: its family and note belong to its
+ * group, its hue to its family's band, lightness 0.60 to 0.80, chroma at most 0.12, a usable score,
+ * and a hex that matches its OKLCH values. Pages the app stored always fit; an edited import might
+ * not, and the nine checks alone would not catch an over-saturated or too-dark page.
+ */
+export function canReturn(p: PageMemory): boolean {
+  const group = GROUPS[p.phase - 1];
+  const family = FAMILY_BY_ID[p.cat];
+  if (!group || !family || !group.fams.some((f) => f.cat === p.cat) || !group.notes.includes(p.midi)) return false;
+  if (!(p.L >= LIGHTNESS.min && p.L <= LIGHTNESS.max && p.C >= 0 && p.C <= CHROMA.max)) return false;
+  if (!(p.h >= family.band[0] && p.h <= family.band[1])) return false;
+  if (!(Number.isFinite(p.a) && Number.isFinite(p.b) && p.a > 0 && p.b > 0)) return false;
+  let stored: number[];
+  try {
+    stored = hexToRgb8(p.hex);
+  } catch {
+    return false;
+  }
+  const expected = hexToRgb8(oklchToHex(p.L, p.C, p.h));
+  return stored.every((v, i) => Math.abs(v - expected[i]) <= MEMORY_HEX_TOLERANCE);
+}
+
+/**
  * Carry-over: remembered pages return by Thompson sampling, inside their original group and never
  * above 25% of a group. Each insert is revalidated and undone when any check fails.
  * Pass a PRNG seeded from the session seed XOR CARRY_SALT.
  */
 export function applyMemory(session: Session, memory: Memory | null | undefined, rng: Rng): Session {
-  const remembered = memory ? Object.values(memory.pages) : [];
+  const remembered = memory ? Object.values(memory.pages).filter(canReturn) : [];
   if (remembered.length === 0) return { ...session, items: session.items.map((p) => ({ ...p })), inserted: 0 };
 
   const items = session.items.map((p) => ({ ...p }));

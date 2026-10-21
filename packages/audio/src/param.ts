@@ -52,6 +52,17 @@ export class TrackedParam {
     return evaluate(active, t);
   }
 
+  /**
+   * Drops segments that ended before `now`: each segment carries its own start and end values, so
+   * the one active at `now` is enough to evaluate any later time. Keeps the mirror small over a
+   * whole session.
+   */
+  private forgetBefore(now: number): void {
+    let i = 0;
+    while (i + 1 < this.segments.length && this.segments[i + 1].t0 <= now) i += 1;
+    if (i > 0) this.segments = this.segments.slice(i);
+  }
+
   /** Time and value where the next ramp would start. */
   private get end(): { t: number; v: number } {
     const last = this.segments[this.segments.length - 1];
@@ -70,6 +81,7 @@ export class TrackedParam {
    * there. `now` is the context's current time. Returns the held value.
    */
   hold(at: number, now: number): number {
+    this.forgetBefore(now);
     const v = this.valueAt(at);
     const p = this.param;
     if (typeof p.cancelAndHoldAtTime === 'function') {

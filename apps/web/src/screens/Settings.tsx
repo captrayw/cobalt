@@ -92,8 +92,8 @@ export function SettingsScreen() {
       </section>
 
       <p className="muted small">
-        At night, consider lowering your screen brightness. The arc ends in blue and violet, and short-wavelength light is the strongest signal
-        for staying awake.
+        At night, consider lowering your screen brightness. The arc ends in blue and violet, and blue light holds back melatonin, the hormone
+        that eases sleep, more than any other color.
       </p>
     </Screen>
   );

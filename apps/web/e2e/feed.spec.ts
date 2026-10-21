@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { feed, lingerCycle, openWithClock, pressDownTimes, rememberOnePage, setHidden, startSession } from './helpers';
 
 test('scenarios 1 to 4: a session moves on, lingers, ends, and a remembered page returns', async ({ page }) => {
@@ -66,11 +66,11 @@ test('scenario 6: the rest screen shows after 200 s without input; ↓ moves on 
   await openWithClock(page);
   await startSession(page);
   await page.clock.runFor(200_000);
-  await expect(page.getByText('Resting')).toBeVisible();
-  await expect(page.getByText('Tap or swipe to continue')).toBeVisible();
+  await expect(page.getByText('Resting', { exact: true })).toBeVisible();
+  await expect(page.getByText('Tap or swipe to continue', { exact: true })).toBeVisible();
   expect((await feed(page))!.status).toBe('resting');
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByText('Resting')).toBeHidden();
+  await expect(page.getByText('Resting', { exact: true })).toBeHidden();
   await expect(page.locator('main.feed')).toHaveAttribute('data-page', '2');
   expect((await feed(page))!.records[0].sleep).toBe(true);
 });
@@ -98,11 +98,11 @@ test('an audio interruption pauses the feed with "Tap to resume", and a tap resu
   await page.clock.runFor(2000);
   // The browser took the audio away (a call, another app): the context reports a non-running state.
   await page.evaluate(() => window.__calm!.getState().feed!.dispatch({ type: 'interrupted', at: performance.now() }));
-  await expect(page.getByText('Tap to resume')).toBeVisible();
+  await expect(page.getByText('Tap to resume', { exact: true })).toBeVisible();
   await page.clock.runFor(30_000);
   expect((await feed(page))!.status).toBe('paused');
   await page.locator('main.feed').click({ position: { x: 200, y: 300 } });
-  await expect(page.getByText('Tap to resume')).toBeHidden();
+  await expect(page.getByText('Tap to resume', { exact: true })).toBeHidden();
   await page.clock.runFor(400);
   const s = await feed(page);
   expect(s!.status).toBe('lingering');

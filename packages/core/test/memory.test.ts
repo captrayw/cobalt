@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   applyMemory,
   biasFrom,
+  canReturn,
+  CAT_IDS,
+  GROUPS,
   CARRY_SALT,
   emptyMemory,
   generateValid,
@@ -118,6 +121,47 @@ describe('learn', () => {
     const copy = structuredClone(memory);
     learn(memory, scored([1]), { seed: 1, at: 1 });
     expect(memory).toEqual(copy);
+  });
+});
+
+describe('canReturn', () => {
+  it('accepts every page the app itself remembers', () => {
+    let count = 0;
+    for (const memory of [buildMemoryFixture(), ...sandboxMemories(4)]) {
+      for (const p of Object.values(memory.pages)) {
+        expect(canReturn(p), p.key).toBe(true);
+        count += 1;
+      }
+    }
+    expect(count).toBeGreaterThan(100);
+  });
+
+  it('keeps edited or corrupted pages out of every session', () => {
+    const good = Object.values(buildMemoryFixture().pages)[0];
+    const foreignCat = CAT_IDS.find((c) => !GROUPS[good.phase - 1].fams.some((f) => f.cat === c))!;
+    const edits: Partial<PageMemory>[] = [
+      { C: 0.3 },
+      { C: 0.1201 },
+      { L: 0.5 },
+      { L: 0.85 },
+      { h: good.h + 40 },
+      { midi: 40 },
+      { cat: foreignCat },
+      { phase: 9 },
+      { hex: '#FF0000' },
+      { hex: 'not a color' },
+      { a: 0 },
+      { b: Number.NaN },
+    ];
+    for (const edit of edits) expect(canReturn({ ...good, ...edit }), JSON.stringify(edit)).toBe(false);
+
+    const pages = Object.fromEntries(edits.map((edit, i) => [`bad${i}`, { ...good, a: 80, b: 1, ...edit, key: `bad${i}` }]));
+    for (const seed of randomSeeds(40, 13)) {
+      const s = generateValid({ seed, ...PACE_PRESETS.standard });
+      const out = applyMemory(s, { ...emptyMemory(), pages }, mulberry32((s.seed ^ CARRY_SALT) >>> 0));
+      expect(out.inserted).toBe(0);
+      expect(out.items).toEqual(s.items);
+    }
   });
 });
 

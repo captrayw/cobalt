@@ -39,7 +39,9 @@ describe.skipIf(!runGolden)('golden files exported from the reference code', () 
   const fixture: Memory = runGolden ? JSON.parse(readFileSync(outDir + 'memory-fixture.json', 'utf8')) : (null as never);
 
   it('the memory fixture built by the port matches the reference fixture', () => {
-    expectClose(buildMemoryFixture(), fixture);
+    // Save times depend on the clock each implementation reads, so they are not compared.
+    const untimed = (m: Memory) => ({ ...m, updatedAt: 0, loops: m.loops.map((l) => ({ ...l, at: 0 })) });
+    expectClose(untimed(buildMemoryFixture()), untimed(fixture));
   });
 
   for (const file of manifest?.files ?? []) {

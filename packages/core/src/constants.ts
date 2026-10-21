@@ -105,6 +105,19 @@ export const INPUT = {
 /** Safety floor: every page is planned for at least this long in any mode. */
 export const MIN_PAGE_SEC = 2;
 export const CHECKPOINT_EVERY = 10;
+/**
+ * Feed details the brief leaves open: how long the faint End and Next controls stay bright after a
+ * touch, how often pointer moves count as activity, how far a press may move and still be a tap,
+ * how long an audio resume may take before the feed shows "Tap to resume", and how long to wait
+ * before asking again for a wake lock the browser refused.
+ */
+export const FEED_UI = {
+  controlsAwakeMs: 2500,
+  moveActivityEveryMs: 250,
+  tapSlopPx: 10,
+  resumeTimeoutMs: 2000,
+  wakeLockRetryMs: 10_000,
+} as const;
 
 // Scoring
 export const SCORING = {
@@ -125,6 +138,14 @@ export const FEATURE_MULTIPLIER = { min: 0.6, max: 1.8, missingRate: 0.1 } as co
 export const GROUP_CAP = 0.25;
 export const MEMORY_CAPS = { pages: 80, loops: 30 } as const;
 export const CARRY_SALT = 0x9e3779b9;
+/**
+ * Addition: a remembered page's stored hex may differ from its rounded OKLCH values by at most this
+ * many 8-bit steps per channel (rounding moves it by 1 at most); beyond that it does not return.
+ */
+export const MEMORY_HEX_TOLERANCE = 2;
+
+// Storage retention (apps/web)
+export const RETENTION = { sessions: 50, snapshots: 5, memoryBytes: 64 * 1024 } as const;
 
 // Sandbox viewer
 export const SIM = {

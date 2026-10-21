@@ -32,6 +32,11 @@ export interface FeedState {
   /** Start of the open hidden or paused span, or null. */
   excludedSince: number | null;
   hidden: boolean;
+  /**
+   * The page has been hidden for 3 minutes or more while lingering: the sound has faded and the
+   * breaths wait for the page to return. Not Rest: hidden time still stays out of the dwell.
+   */
+  muted: boolean;
   /** Current breath number, 0 before the first. */
   breath: number;
   breaths: BreathLog[];
@@ -64,7 +69,8 @@ export type FeedEffect =
   | { type: 'drones'; midis: number[]; gainDb: number }
   | { type: 'releaseVoices' }
   | { type: 'master'; target: number; tc: number }
-  | { type: 'checkpoint' }
+  /** Save an in-progress copy; `current` also records the page on screen so far. */
+  | { type: 'checkpoint'; current: boolean }
   | { type: 'finish' };
 
 export interface FeedStep {

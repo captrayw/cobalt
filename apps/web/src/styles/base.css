@@ -312,7 +312,7 @@ h1[tabindex='-1']:focus {
   justify-content: center;
   min-height: 44px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: var(--ink-2);
   font-weight: 500;
   text-align: center;
@@ -582,9 +582,7 @@ h1[tabindex='-1']:focus {
 }
 
 .arc-name {
-  font: 500 10px/1.2 var(--font-mono);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font: 500 11px/1.2 var(--font-mono);
   color: var(--ink-2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -613,6 +611,16 @@ h1[tabindex='-1']:focus {
   line-height: 1.5;
   color: var(--ink-2);
   overflow-wrap: anywhere;
+}
+
+/* A 44 x 44 px target around each short source link. */
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  vertical-align: middle;
 }
 
 /* Tables (developer screen) */
@@ -703,7 +711,7 @@ select {
 .chart-plot:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 
 .chart-tip {
@@ -715,7 +723,7 @@ select {
   gap: 2px;
   min-width: 150px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid var(--line-strong);
   background: var(--panel);
   box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
@@ -755,12 +763,7 @@ select {
   }
 }
 
-/* Reduced motion: colors switch instantly and nothing slides. */
-:root[data-motion='reduce'] *,
-:root[data-motion='reduce'] *::before,
-:root[data-motion='reduce'] *::after {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
-  scroll-behavior: auto !important;
+/* Reduced motion: nothing slides or scrolls smoothly (see also feed.css). */
+:root[data-motion='reduce'] {
+  scroll-behavior: auto;
 }

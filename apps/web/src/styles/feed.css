@@ -54,7 +54,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  /* Above the home indicator on phones without a home button. */
+  bottom: env(safe-area-inset-bottom, 0px);
   height: 2px;
   background: rgb(11 14 20 / 0.55);
   transform: scaleX(0);
@@ -137,6 +138,10 @@
   color: #a7b0c1;
 }
 
-.feed-paused {
-  background: rgb(5 7 12 / 0.6);
+/* Reduced motion: the knob and segment highlights stop sliding. Opacity fades (the dim layer,
+   text fading in) are not motion and stay. Colors switch instantly in code. */
+:root[data-motion='reduce'] .switch::after,
+:root[data-motion='reduce'] .switch::before,
+:root[data-motion='reduce'] .segmented label {
+  transition: none;
 }

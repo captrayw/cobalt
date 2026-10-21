@@ -73,6 +73,56 @@ describe('repository', () => {
     expect(await recoverOpenSessions(repo, T0 + 6000)).toBe(0);
   });
 
+  it('dates a recovered session by its checkpoint, while memory records the time of the save', async () => {
+    const { repo } = freshRepo();
+    const checkpointAt = T0 + 9000;
+    await repo.checkpoint({ ...makeSessionDoc({ lingerEvery: 7, status: 'open' }), endedAt: checkpointAt });
+    const launchAt = T0 + 3 * 24 * 3600 * 1000;
+    expect(await recoverOpenSessions(repo, launchAt)).toBe(1);
+    const [session] = await repo.recentSessions();
+    const memory = await repo.loadMemory();
+    expect(session.endedAt).toBe(checkpointAt);
+    expect(memory.loops[0].at).toBe(checkpointAt);
+    expect(memory.updatedAt).toBe(launchAt);
+  });
+
+  it('a late checkpoint never reopens a session that was already finished', async () => {
+    const { repo } = freshRepo();
+    const open = makeSessionDoc({ lingerEvery: 7, status: 'open' });
+    const done = finalizeSession(emptyMemory(), open, T0 + 1000, 'done');
+    await repo.finishSession(done.memory, done.doc);
+    await repo.checkpoint(open);
+    expect(await repo.openSessions()).toEqual([]);
+    expect((await repo.lastSession())?.status).toBe('done');
+    expect(await recoverOpenSessions(repo, T0 + 2000)).toBe(0);
+  });
+
+  it('leaves alone a session that is still running in another tab', async () => {
+    const { repo } = freshRepo();
+    const live = makeSessionDoc({ seed: 8, lingerEvery: 7, status: 'open' });
+    const stale = makeSessionDoc({ seed: 9, startedAt: T0 + 5000, lingerEvery: 7, status: 'open' });
+    await repo.checkpoint(live);
+    await repo.checkpoint(stale);
+    expect(await recoverOpenSessions(repo, T0 + 9000, async (id) => id === live.id)).toBe(1);
+    expect((await repo.openSessions()).map((s) => s.id)).toEqual([live.id]);
+  });
+
+  it('keeps unreadable stored memory as a snapshot instead of overwriting it', async () => {
+    const { repo, factory, name } = freshRepo();
+    const db = await openCalmDb(name, factory);
+    await db.put(STORES.memory, { v: 99, garbage: true }, MEMORY_KEY);
+    db.close();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(await repo.loadMemory()).toEqual(emptyMemory());
+    warn.mockRestore();
+    const [snapshot] = await repo.listSnapshots();
+    expect(snapshot.reason).toBe('migration');
+    expect(snapshot.raw).toEqual({ v: 99, garbage: true });
+    // The unreadable document is replaced only after it was copied, so later loads are quiet.
+    expect(await repo.loadMemory()).toEqual(emptyMemory());
+    expect(await repo.listSnapshots()).toHaveLength(1);
+  });
+
   it('recovers several checkpoints oldest first, and closes an empty one without learning', async () => {
     const { repo } = freshRepo();
     const empty = makeSessionDoc({ seed: 3, startedAt: T0 + 60_000, watched: 0 });

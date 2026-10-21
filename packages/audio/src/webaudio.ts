@@ -78,6 +78,8 @@ export class WebAudioEngine implements AudioEngine {
   private readonly droneVoices = new Map<number, Drone>();
   private readonly listeners = new Set<(state: EngineState) => void>();
   private closing: Promise<void> | null = null;
+  /** The context has run at least once. */
+  private ran = false;
 
   constructor(options: WebAudioEngineOptions = {}) {
     this.volume = clampVolumeDb(options.volumeDb ?? USER_VOLUME_DB.default);
@@ -115,6 +117,7 @@ export class WebAudioEngine implements AudioEngine {
     this.ctx = ctx;
     ctx.addEventListener('statechange', () => {
       const state = stateOf(ctx);
+      if (state === 'running') this.ran = true;
       for (const listener of this.listeners) listener(state);
     });
   }
@@ -157,9 +160,21 @@ export class WebAudioEngine implements AudioEngine {
     return { ctx: this.ctx, graph: this.graph };
   }
 
+  /**
+   * Voices are scheduled before the context first runs (the first page tone waits for the unlock),
+   * but not once a running context has stopped: its clock is frozen, so every tone queued then
+   * would start at the same moment when it resumes.
+   */
+  private canVoice(ctx: BaseAudioContext): boolean {
+    // An offline render suspends itself on purpose, to let callers schedule mid-render.
+    if (isOffline(ctx)) return true;
+    if (ctx.state === 'running') this.ran = true;
+    return !this.ran || ctx.state === 'running';
+  }
+
   tone(hz: number, at: number, dur: number, gainDb: number, inhale: number): void {
     const live = this.live();
-    if (!live) return;
+    if (!live || !this.canVoice(live.ctx)) return;
     const { ctx, graph } = live;
     const env = toneEnvelope(dur, gainDb, inhale);
     const voiceGain = ctx.createGain();
@@ -195,7 +210,7 @@ export class WebAudioEngine implements AudioEngine {
 
   drones(midis: readonly number[], gainDb: number, at: number): void {
     const live = this.live();
-    if (!live) return;
+    if (!live || !this.canVoice(live.ctx)) return;
     const { ctx, graph } = live;
     const wanted = new Map<number, number>();
     for (const midi of midis) {
@@ -290,6 +305,16 @@ export class WebAudioEngine implements AudioEngine {
     if (!live) return;
     const at = live.ctx.currentTime + SCHEDULE.offset;
     for (const [midi, drone] of this.droneVoices) this.retireDrone(midi, drone, at, timeConstant);
+  }
+
+  async sleep(): Promise<void> {
+    const ctx = this.ctx;
+    if (!ctx || isOffline(ctx) || ctx.state !== 'running' || this.closing) return;
+    try {
+      await (ctx as AudioContext).suspend();
+    } catch {
+      // Already suspended or closing.
+    }
   }
 
   close(fadeSec: number = MASTER_TC.end, closeAfterSec: number = CLOSE_AFTER_SEC.end): Promise<void> {

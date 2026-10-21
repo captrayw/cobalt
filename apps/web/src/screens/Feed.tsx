@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { FEED_UI } from '@calm/core';
+import { memo, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useReducedMotion } from '../appearance';
 import type { FeedController } from '../feed/controller';
 import { ColorCrossfade } from '../feed/crossfade';
@@ -6,10 +7,6 @@ import { classifyKey, initialWheel, pointerAction, wheelAction } from '../feed/g
 import { useApp } from '../store';
 
 const FEED_LABEL = 'Calm feed. Swipe up or press the down arrow for the next page.';
-/** How long the faint controls stay bright after a touch, ms. */
-const AWAKE_MS = 2500;
-/** Pointer moves count as activity at most this often, ms. */
-const MOVE_EVERY_MS = 250;
 
 /** Wire keys, wheel and pointer input on the feed surface to the controller. */
 function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElement | null>, wake: () => void) {
@@ -17,7 +14,7 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
     const el = surface.current;
     if (!el) return;
     let wheel = initialWheel;
-    let press: { id: number; x: number; y: number } | null = null;
+    let press: { id: number; x: number; y: number; onButton: boolean } | null = null;
     let lastMove = Number.NEGATIVE_INFINITY;
 
     const onKey = (e: KeyboardEvent) => {
@@ -40,20 +37,21 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
       else feed.activity(false);
     };
     const onDown = (e: PointerEvent) => {
-      if ((e.target as Element).closest('button')) return;
-      press = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      press = { id: e.pointerId, x: e.clientX, y: e.clientY, onButton: (e.target as Element).closest('button') !== null };
     };
     const onUp = (e: PointerEvent) => {
       if (!press || press.id !== e.pointerId) return;
       const action = pointerAction(e.clientX - press.x, e.clientY - press.y);
+      const onButton = press.onButton;
       press = null;
       wake();
+      // A swipe counts wherever it starts; a tap on End or Next belongs to that button's click.
       if (action === 'next') feed.next();
-      else feed.activity(action === 'tap');
+      else if (!onButton) feed.activity(action === 'tap');
     };
     const onMove = () => {
       const now = performance.now();
-      if (now - lastMove < MOVE_EVERY_MS) return;
+      if (now - lastMove < FEED_UI.moveActivityEveryMs) return;
       lastMove = now;
       wake();
       feed.activity(false);
@@ -79,21 +77,23 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
   }, [feed, surface, wake]);
 }
 
-function EndIcon() {
+/** End and Next. They never change during a session, so a page change does not re-render them. */
+const FeedControls = memo(function FeedControls({ feed }: { feed: FeedController }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-      <path d="M5 5l12 12M17 5L5 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-    </svg>
+    <>
+      <button type="button" className="feed-button feed-end" aria-label="End session" onClick={feed.end}>
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+          <path d="M5 5l12 12M17 5L5 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </svg>
+      </button>
+      <button type="button" className="feed-button feed-next" aria-label="Next page" onClick={feed.next}>
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 9l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      </button>
+    </>
   );
-}
-
-function NextIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 9l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
-}
+});
 
 export function FeedScreen({ feed }: { feed: FeedController }) {
   const view = useSyncExternalStore(feed.subscribe, feed.getView);
@@ -112,7 +112,7 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
     if (awakeTimer.current) clearTimeout(awakeTimer.current);
     awakeTimer.current = setTimeout(() => {
       el.dataset.awake = 'false';
-    }, AWAKE_MS);
+    }, FEED_UI.controlsAwakeMs);
   }, []);
 
   useFeedInputs(feed, surface, wake);
@@ -138,6 +138,9 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
 
   const showing = view.status === 'showing';
   const announcement = pageDetails ? `Page ${view.index + 1} of ${view.total}. ${page.note}, ${page.catName}${page.memKey ? ', from memory' : ''}.` : '';
+  // Kept in a region that is always present, so screen readers announce each change.
+  const statusText =
+    view.status === 'resting' ? 'Resting. Tap or swipe to continue.' : view.status === 'paused' ? 'Paused. Tap to resume.' : '';
 
   return (
     <main
@@ -164,21 +167,16 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
 
       {!reduced && showing && <div className="feed-progress" key={view.t0} style={{ animationDuration: `${page.dwell}s` }} />}
 
-      <button type="button" className="feed-button feed-end" aria-label="End session" onClick={feed.end}>
-        <EndIcon />
-      </button>
-      <button type="button" className="feed-button feed-next" aria-label="Next page" onClick={feed.next}>
-        <NextIcon />
-      </button>
+      <FeedControls feed={feed} />
 
       {view.status === 'resting' && (
-        <div className="feed-overlay" role="status">
+        <div className="feed-overlay">
           <p className="feed-overlay-title">Resting</p>
           <p className="feed-overlay-hint">Tap or swipe to continue</p>
         </div>
       )}
       {view.status === 'paused' && (
-        <div className="feed-overlay feed-paused" role="status">
+        <div className="feed-overlay">
           <p className="feed-overlay-title">Paused</p>
           <p className="feed-overlay-hint">Tap to resume</p>
         </div>
@@ -186,6 +184,9 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
 
       <div className="sr-only" aria-live="polite">
         {announcement}
+      </div>
+      <div className="sr-only" role="status">
+        {statusText}
       </div>
     </main>
   );

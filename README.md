@@ -42,6 +42,8 @@ pnpm verify         # all of the above, as CI runs them
 
 Install Playwright's browsers once with `pnpm --filter @calm/web exec playwright install chromium webkit`.
 
+If the project sits in a folder that OneDrive (or another sync tool) syncs, a build can occasionally fail with `EPERM` while the sync tool holds a file in `apps/web/dist`; run it again, or keep the project outside the synced folder.
+
 ## Status
 
 Milestones 1 to 5 are built. Their gates pass locally, except the parts that need the reference code or real hardware (see `docs/decisions.md`). Milestones 6 (cloud sync) and 7 (evening and research modes) wait for the owner's approval.

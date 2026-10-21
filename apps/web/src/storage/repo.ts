@@ -1,15 +1,15 @@
-import { emptyMemory, type Memory } from '@calm/core';
-import type { IDBPObjectStore, StoreNames } from 'idb';
+import { emptyMemory, RETENTION, type Memory } from '@calm/core';
+import { unwrap, type IDBPObjectStore, type IDBPTransaction, type StoreNames } from 'idb';
 import type { z } from 'zod';
 import { DB_NAME, MEMORY_KEY, openCalmDb, STORES, type CalmDb, type CalmSchema, type SettingRow } from './db';
 import { migrateMemory, migrateSession, migrateSettingValue, migrateSnapshot, needsMigration } from './migrate';
 import { ExportFileSchema, MemorySchema, SessionDocSchema, SettingsSchema, describeIssue } from './schema';
 import { DEFAULT_SETTINGS, type ExportFile, type SessionDoc, type Settings, type SnapshotDoc, type SnapshotReason } from './types';
 
-/** Retention rules from the brief. */
-export const SESSION_RETENTION = 50;
-export const SNAPSHOT_RETENTION = 5;
-export const MEMORY_SIZE_LIMIT = 64 * 1024;
+/** Retention rules from the brief, kept with every other tunable in the core's constants. */
+export const SESSION_RETENTION = RETENTION.sessions;
+export const SNAPSHOT_RETENTION = RETENTION.snapshots;
+export const MEMORY_SIZE_LIMIT = RETENTION.memoryBytes;
 
 /** Everything the app reads and writes on the device. All personal data stays in IndexedDB. */
 export interface CalmRepo {
@@ -87,6 +87,16 @@ async function putSnapshot<Tx extends ArrayLike<StoreNames<CalmSchema>>>(store: 
   for (const key of keys.slice(0, Math.max(0, keys.length - SNAPSHOT_RETENTION))) await store.delete(key);
 }
 
+/** Ask the browser to commit now rather than when the transaction falls idle (where supported). */
+function commitNow(tx: IDBPTransaction<CalmSchema, StoreNames<CalmSchema>[], 'readwrite'>): void {
+  const native: IDBTransaction = unwrap(tx);
+  try {
+    native.commit?.();
+  } catch {
+    // Already committing or finished.
+  }
+}
+
 /** Deletes the oldest sessions beyond the newest 50. */
 async function trimSessions<Tx extends ArrayLike<StoreNames<CalmSchema>>>(store: WritableStore<'sessions', Tx>): Promise<void> {
   let excess = (await store.count()) - SESSION_RETENTION;
@@ -100,15 +110,23 @@ async function trimSessions<Tx extends ArrayLike<StoreNames<CalmSchema>>>(store:
 
 export function createRepo(name: string = DB_NAME, factory?: IDBFactory): CalmRepo {
   let opening: Promise<CalmDb> | null = null;
-  const db = () => (opening ??= openCalmDb(name, factory));
+  // One connection, reopened if it closes or fails to open.
+  const db = () =>
+    (opening ??= openCalmDb(name, factory, () => {
+      opening = null;
+    }).catch((error: unknown) => {
+      opening = null;
+      throw error;
+    }));
 
   const repo: CalmRepo = {
     async loadMemory() {
       const d = await db();
       const raw = await d.get(STORES.memory, MEMORY_KEY);
-      const { memory, migrated } = readMemory(raw);
-      if (migrated) {
-        // Keep the old document as a snapshot, then store the migrated one.
+      const { memory, migrated, unreadable } = readMemory(raw);
+      if (migrated || unreadable) {
+        // Keep the old document as a snapshot, then store the migrated (or, if unreadable, empty)
+        // memory, so the original is never overwritten without a copy.
         const tx = d.transaction([STORES.memory, STORES.snapshots], 'readwrite');
         await putSnapshot(tx.objectStore(STORES.snapshots), { v: 1, at: Date.now(), reason: 'migration', memory, raw });
         await tx.objectStore(STORES.memory).put(memory, MEMORY_KEY);
@@ -122,17 +140,24 @@ export function createRepo(name: string = DB_NAME, factory?: IDBFactory): CalmRe
       const s = parseOrThrow(SessionDocSchema, session, 'session');
       warnIfLarge(m);
       const d = await db();
+      // Both writes are placed at once and the transaction is committed explicitly, so the save can
+      // complete even while the page unloads. Trimming old sessions follows in its own transaction.
       const tx = d.transaction([STORES.memory, STORES.sessions], 'readwrite');
-      const sessions = tx.objectStore(STORES.sessions);
-      await tx.objectStore(STORES.memory).put(m, MEMORY_KEY);
-      await sessions.put(s);
-      await trimSessions(sessions);
-      await tx.done;
+      const saved = Promise.all([tx.objectStore(STORES.memory).put(m, MEMORY_KEY), tx.objectStore(STORES.sessions).put(s), tx.done]);
+      commitNow(tx);
+      await saved;
+      const trim = d.transaction(STORES.sessions, 'readwrite');
+      await trimSessions(trim.store);
+      await trim.done;
     },
 
     async checkpoint(session) {
       const d = await db();
-      await d.put(STORES.sessions, { ...session, status: 'open' });
+      const tx = d.transaction(STORES.sessions, 'readwrite');
+      const existing = await tx.store.get(session.id);
+      // Never reopen a session that was already finished or recovered (another tab, a late write).
+      if (!existing || existing.status === 'open') await tx.store.put({ ...session, status: 'open' });
+      await tx.done;
     },
 
     async openSessions() {
@@ -232,7 +257,8 @@ export function createRepo(name: string = DB_NAME, factory?: IDBFactory): CalmRe
       await putSnapshot(tx.objectStore(STORES.snapshots), { v: 1, at, reason: 'import', memory, ...(migrated || unreadable ? { raw } : {}) });
       await memoryStore.put(parsed.memory, MEMORY_KEY);
       await sessions.clear();
-      for (const s of parsed.sessions) await sessions.put(s);
+      // An open session in a file would be learned again at the next launch, so it is left out.
+      for (const s of parsed.sessions) if (s.status !== 'open') await sessions.put(s);
       await trimSessions(sessions);
       await settings.clear();
       for (const [key, value] of Object.entries(parsed.settings)) await settings.put({ v: 1, name: key, value } satisfies SettingRow, key);
