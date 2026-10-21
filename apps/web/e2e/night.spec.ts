@@ -46,10 +46,12 @@ test('arrows at the left and right edges show the way, and switch day and night 
   await expect(surface).toHaveAttribute('data-page', '1');
 });
 
-test('each arrow fades out once its gesture is used, and stays out of sight in later sessions', async ({ page }) => {
+test('each arrow fades out once its gesture is used, and the hints stay out of sight in later sessions', async ({ page }) => {
   await page.goto('/');
   const surface = page.locator('main.feed');
   await expect(surface).toHaveAttribute('data-page', '1');
+  const swipeUp = page.getByText('Swipe up for the next page', { exact: true });
+  await expect(swipeUp).toBeVisible();
   const next = page.getByRole('button', { name: 'Next page' });
   const day = page.getByRole('button', { name: 'Day mode' });
   const night = page.getByRole('button', { name: 'Night mode' });
@@ -73,12 +75,13 @@ test('each arrow fades out once its gesture is used, and stays out of sight in l
   await expect(next).toBeFocused();
   await expect(next).not.toHaveCSS('opacity', '0');
 
-  // A new session: the hints stay retired.
+  // A new session: the hints stay retired, the swipe-up text with the down arrow.
   await expect
     .poll(() => page.evaluate(async () => (await window.__calm!.getState().repo!.loadSettings()).learnedNext))
     .toBe(true);
   await page.reload();
   await expect(surface).toHaveAttribute('data-page', '1');
+  await expect(swipeUp).toBeHidden();
   await expect(next).toHaveCSS('opacity', '0');
   await expect(night).toHaveCSS('opacity', '0');
 });

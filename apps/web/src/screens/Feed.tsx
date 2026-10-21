@@ -180,6 +180,7 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   const crossfade = useRef<ColorCrossfade | null>(null);
   const awakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Until the first touch, a quiet hint says how to move on (sound also starts with that touch).
+  // Like the down arrow, it is retired once the person has moved on to a next page.
   const [touched, setTouched] = useState(false);
   const touchedRef = useRef(false);
 
@@ -227,7 +228,8 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   // The records note which colors each page was shown in.
   useEffect(() => feed.setNight(night), [feed, night]);
 
-  // Pages only change when the person moves on, so leaving page 1 retires the down arrow's hint.
+  // Pages only change when the person moves on, so leaving page 1 retires the down arrow and the
+  // swipe-up hint.
   useEffect(() => {
     if (view.index > 0 && !learnedNext) void updateSettings({ learnedNext: true });
   }, [view.index, learnedNext]);
@@ -296,7 +298,7 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
 
       {!reduced && showing && <div className="feed-progress" key={view.t0} style={{ animationDuration: `${page.dwell}s` }} />}
 
-      {!touched && view.index === 0 && view.status !== 'resting' && view.status !== 'paused' && (
+      {!learnedNext && !touched && view.index === 0 && view.status !== 'resting' && view.status !== 'paused' && (
         <p className="feed-hint">Swipe up for the next page</p>
       )}
 
