@@ -2,9 +2,11 @@ import { expect, test } from './fixtures';
 import { feed, openWithClock, startSession } from './helpers';
 
 test('a swipe right turns on night colors with a notice that fades, and ← brings day back', async ({ page }) => {
-  await page.goto('/');
+  // The notice lasts 1.6 s. With the clock paused it stays until the test moves time on, so a
+  // loaded machine cannot miss it.
+  await openWithClock(page);
+  await startSession(page);
   const surface = page.locator('main.feed');
-  await expect(surface).toHaveAttribute('data-page', '1');
   // The feed takes focus right after its input listeners are attached: only then can it hear a swipe.
   await expect(surface).toBeFocused();
   const box = (await surface.boundingBox())!;
@@ -17,7 +19,8 @@ test('a swipe right turns on night colors with a notice that fades, and ← brin
   const notice = page.locator('.feed-notice');
   await expect(notice).toHaveText('Night mode');
   await expect(surface).toHaveAttribute('data-night', 'true');
-  await expect(notice).toBeHidden({ timeout: 5000 });
+  await page.clock.runFor(1700);
+  await expect(notice).toBeHidden();
   // A sideways swipe switches colors; it does not move on.
   await expect(surface).toHaveAttribute('data-page', '1');
 
@@ -34,9 +37,9 @@ test('a swipe right turns on night colors with a notice that fades, and ← brin
 });
 
 test('arrows at the left and right edges show the way, and switch day and night when tapped', async ({ page }) => {
-  await page.goto('/');
+  await openWithClock(page);
+  await startSession(page);
   const surface = page.locator('main.feed');
-  await expect(surface).toHaveAttribute('data-page', '1');
   await page.getByRole('button', { name: 'Night mode' }).click();
   await expect(page.locator('.feed-notice')).toHaveText('Night mode');
   await expect(surface).toHaveAttribute('data-night', 'true');
