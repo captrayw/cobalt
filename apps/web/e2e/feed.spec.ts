@@ -99,18 +99,6 @@ test('scenarios 1 to 4: a session moves on, lingers, ends, and a remembered page
   });
 });
 
-test('scenario 5: in "2, 5, 9 s" mode breaths last 2, 5, 9 and 9 s', async ({ page }) => {
-  await openWithClock(page, '/#/settings');
-  await page.getByText('2, 5, 9 s', { exact: true }).click();
-  await startSession(page);
-  const s = await feed(page);
-  await page.clock.runFor(Math.ceil(s!.planned * 1000) + 25_100);
-  const after = await feed(page);
-  expect(after!.breaths.slice(0, 4).map((b) => b.dur / 1000)).toEqual([2, 5, 9, 9]);
-  const gaps = after!.breaths.slice(1, 5).map((b, i) => Number(((b.start - after!.breaths[i].start) / 1000).toFixed(3)));
-  expect(gaps).toEqual([2, 5, 9, 9]);
-});
-
 test('scenario 6: the rest screen shows after 200 s without input; ↓ moves on and clears it', async ({ page }) => {
   await openWithClock(page);
   await startSession(page);

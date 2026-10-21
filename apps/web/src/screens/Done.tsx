@@ -73,8 +73,6 @@ export function Done() {
             About
           </button>
         </nav>
-
-        <p className="muted small">A relaxation aid, not a medical treatment. Everything stays on this device.</p>
       </div>
     </main>
   );

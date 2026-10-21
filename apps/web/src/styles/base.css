@@ -589,38 +589,115 @@ h1[tabindex='-1']:focus {
   white-space: nowrap;
 }
 
-/* Prose (About) */
-.prose {
+/* About: the maker's name, centered over a slow cobalt glow, with the rights line at the foot. */
+.about-screen {
   display: flex;
   flex-direction: column;
-  gap: 14px;
 }
 
-.prose ul,
-.prose ol {
-  margin: 0;
-  padding-left: 22px;
+.about {
+  flex: 1;
+  width: 100%;
 }
 
-.prose li + li {
-  margin-top: 6px;
-}
-
-.sources {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-2);
-  overflow-wrap: anywhere;
-}
-
-/* A 44 x 44 px target around each short source link. */
-.source-link {
-  display: inline-flex;
+.about-center {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
+  gap: 26px;
+  padding: 56px 0;
+  text-align: center;
+  animation: fade-in 900ms ease-out;
+}
+
+/* One breath every 10 s: 5 s in, 5 s out. Stops under reduced motion. */
+.about-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: min(84vw, 400px);
+  height: min(84vw, 400px);
+  margin: auto;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(var(--cobalt) / var(--glow)) 0%,
+    rgb(var(--cobalt) / calc(var(--glow) * 0.4)) 40%,
+    rgb(var(--cobalt) / 0) 70%
+  );
+  filter: blur(10px);
+  pointer-events: none;
+  animation: about-breathe 5s ease-in-out infinite alternate;
+}
+
+@keyframes about-breathe {
+  from {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+:root[data-motion='reduce'] .about-glow {
+  animation: none;
+}
+
+.about-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.about-eyebrow {
+  /* Wide tracking adds space after the last letter too; the left padding re-centers the word. */
+  padding-left: 0.34em;
+  font: 500 12px/1.4 var(--font-mono);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.about-by {
+  font: 400 16px/1 var(--font-body);
+  color: var(--ink-2);
+}
+
+.about-maker {
+  font: 400 clamp(32px, 9.5vw, 46px) / 1.1 var(--font-body);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.about-rule {
+  width: 36px;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
-  vertical-align: middle;
+  padding: 0 12px;
+  font: 500 13px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.about-rights {
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
 }
 
 /* Tables (developer screen) */

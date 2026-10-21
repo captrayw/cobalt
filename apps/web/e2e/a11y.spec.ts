@@ -5,7 +5,8 @@ import { openWithClock, pauseSoon, rememberOnePage, startSession } from './helpe
 
 /**
  * Wait until fades (180 ms text fade-ins, the dim layer's opacity) have finished, so axe sees final
- * colors. The progress hairline, which runs for the whole planned dwell, is not waited for.
+ * colors. The progress hairline, which runs for the whole planned dwell, and endless animations
+ * such as the About glow's breathing are not waited for.
  */
 async function settled(page: Page) {
   await page.evaluate(() =>
@@ -13,6 +14,7 @@ async function settled(page: Page) {
       document
         .getAnimations()
         .filter((a) => !('animationName' in a) || (a as CSSAnimation).animationName !== 'hairline')
+        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
         .map((a) => a.finished.catch(() => undefined)),
     ),
   );

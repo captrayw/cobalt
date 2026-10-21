@@ -1,150 +1,34 @@
-import { SOURCES } from '../content/sources';
-import { Screen } from '../ui';
+import { useEffect, useRef } from 'react';
+import { BackButton } from '../ui';
 
-/** Source numbers, as in the list at the end. */
-function Refs({ n }: { n: number[] }) {
-  return <span className="num muted small"> [{n.join(', ')}]</span>;
-}
-
+/**
+ * Owner change (Oct 2026): About names the maker and nothing more. Behind the name, a cobalt glow
+ * breathes at six breaths a minute, the pace the linger rhythm moves toward.
+ */
 export function About() {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus({ preventScroll: true }), []);
+
   return (
-    <Screen title="About" intro="A plain account of what Calm Scroll does, and why.">
-      <section className="prose">
-        <h2>What it is</h2>
-        <p>
-          Calm Scroll plays a fifteen-minute feed of full-screen colors, each with one soft note. It opens straight into the feed, and you move on
-          whenever you like, as in a short-video feed. Browsers only allow sound after a first touch, so the sound starts with your first swipe or
-          tap. It is a relaxation aid. It does not diagnose, treat or cure anything.
-        </p>
-        <p>No study has tested this exact mix of color, sound and feed, so treat it as a gentle experiment.</p>
-      </section>
+    <main className="screen about-screen">
+      <div className="column about">
+        <BackButton />
 
-      <section className="prose">
-        <h2>Your pace</h2>
-        <p>
-          A session is planned as about 120 pages. If you move faster than that, the rest of the session is cut into more, shorter pages every
-          ten pages, so that at your pace it still lasts about fifteen minutes. No page is ever shorter than two seconds, so at a very quick pace
-          a session can end a little early.
-        </p>
-      </section>
+        <div className="about-center">
+          <div className="about-glow" aria-hidden="true" />
+          <h1 ref={heading} tabIndex={-1} className="about-title">
+            <span className="about-eyebrow">a cobalt app</span>{' '}
+            <span className="about-by">by</span>{' '}
+            <span className="about-maker">a color company</span>
+          </h1>
+          <span className="about-rule" aria-hidden="true" />
+          <a className="about-link" href="https://acolorcompany.com" target="_blank" rel="noopener noreferrer">
+            acolorcompany.com<span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </div>
 
-      <section className="prose">
-        <h2>The arc</h2>
-        <p>Each session passes through seven groups: Meet, Lift, Ground, Deepen, Slow, Release and Rest.</p>
-        <ul>
-          <li>
-            Colors lose saturation as the session goes on, because saturation and brightness move arousal more than hue does.
-            <Refs n={[7, 8]} />
-          </li>
-          <li>
-            They move from warm to cool families, since cool hues arouse less than red at matched saturation.
-            <Refs n={[8]} />
-          </li>
-          <li>
-            Lightness stays in a soft middle band rather than ending near black, because dark immersive scenes can raise arousal.
-            <Refs n={[10]} />
-          </li>
-          <li>
-            Notes descend and soften, and lighter pages take higher notes, a match most people share.
-            <Refs n={[15, 16, 17]} />
-          </li>
-          <li>
-            The last page resolves to the home note, D3, and the session ends in silence.
-            <Refs n={[14]} />
-          </li>
-        </ul>
-        <p>
-          The sound uses standard tuning, with A at 440 Hz. Claims about 432 Hz rest on one small pilot study.
-          <Refs n={[19]} />
-        </p>
-      </section>
-
-      <section className="prose">
-        <h2>The voice and the linger rhythm</h2>
-        <p>
-          Each page's note holds steadily for as long as you stay. When you move on, it flows into the next page's note over the same second or
-          so that the colors take to blend.
-        </p>
-        <p>
-          Stay on a page past its planned time and it starts to breathe. The note swells and settles once per breath without ever fading away,
-          each breath a little longer, softer and weighted toward the exhale, and the screen dims slightly.
-        </p>
-        <p>
-          The gradual rhythm starts at the page's own pace and stretches each breath about 6%, toward six and then five breaths a minute. Slow
-          breathing near six a minute, with a longer exhale, is linked to relaxation, though the studies are small.
-          <Refs n={[20, 21, 22, 23, 24, 25]} />
-        </p>
-        <p>
-          Each change stays small, because responses fade with repetition and return with sudden novelty.
-          <Refs n={[28]} /> The 2, 5, 9 second rhythm is kept for comparison. Its 2 second opening equals thirty breaths a minute, so it is not the default.
-        </p>
-      </section>
-
-      <section className="prose">
-        <h2>Rest</h2>
-        <p>
-          After three minutes without a touch or key press, the sound fades to silence and the screen may turn off. The page is noted as possible
-          sleep. Any touch wakes it.
-          <Refs n={[26, 27]} />
-        </p>
-      </section>
-
-      <section className="prose">
-        <h2>Memory</h2>
-        <p>
-          A page you stay on much longer than the pages around it is remembered, with a score. Each page is compared only with its neighbors, so
-          the natural slowing late in a session does not count as a preference.
-          <Refs n={[32, 33]} />
-        </p>
-        <p>
-          The next session may bring a remembered page back by chance, inside its original group and never more than a quarter of a group, so
-          most of each session stays new.
-          <Refs n={[2, 34, 35]} /> Scores fade 15% each session. You can turn this off in Settings.
-        </p>
-      </section>
-
-      <section className="prose">
-        <h2>Privacy</h2>
-        <p>
-          There is no account, no analytics and no network use. Everything stays in this browser on this device. You can export, import or reset
-          it on the Memory screen.
-        </p>
-      </section>
-
-      <section className="prose">
-        <h2>Care and safety</h2>
-        <ul>
-          <li>
-            Nothing flashes. Colors change only by slow crossfade, every page lasts at least two seconds, and the feed moves at most one page per
-            0.4 seconds.
-            <Refs n={[4]} />
-          </li>
-          <li>Saturation stays low, and the first page is the loudest. The volume control can only make sound softer.</li>
-          <li>
-            Every color is paired with a name, a note or a lightness cue, since red-green color blindness is common.
-            <Refs n={[5]} />
-          </li>
-          <li>
-            At night, lower your screen brightness. Blue light holds back melatonin, the hormone that eases sleep, more than any other color.
-            <Refs n={[6]} />
-          </li>
-          <li>Sessions end. There are no streaks, badges, notifications or endless feed.</li>
-        </ul>
-      </section>
-
-      <section className="prose" aria-labelledby="sources-heading">
-        <h2 id="sources-heading">Sources</h2>
-        <ol className="sources">
-          {SOURCES.map((s) => (
-            <li key={s.n} value={s.n}>
-              {s.cite}{' '}
-              <a className="source-link" href={s.url} target="_blank" rel="noreferrer noopener">
-                Link<span className="sr-only"> to source {s.n}, opens in a new tab</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </section>
-    </Screen>
+        <p className="about-rights">© 2026 a color company. All rights reserved.</p>
+      </div>
+    </main>
   );
 }

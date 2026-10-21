@@ -17,7 +17,7 @@ async function populated(): Promise<CalmRepo> {
     await repo.finishSession(memory, result.doc);
   }
   await repo.checkpoint(makeSessionDoc({ seed: 30, startedAt: T0 + 9_000_000 }));
-  await repo.saveSettings({ pace: 'measured', lingerMode: 'user', volumeDb: -9.5, pageDetails: true, theme: 'light', reducedMotion: 'reduce', useMemory: false });
+  await repo.saveSettings({ volumeDb: -9.5, pageDetails: true, theme: 'light', reducedMotion: 'reduce', useMemory: false });
   return repo;
 }
 
@@ -33,7 +33,7 @@ describe('export and import', () => {
     expect(file.sessions.map((s) => s.startedAt)).toEqual([T0, T0 + 1_000_000, T0 + 2_000_000]);
     expect(file.sessions.every((s) => s.status === 'done')).toBe(true);
     expect(file.memory).toEqual(await repo.loadMemory());
-    expect(file.settings.pace).toBe('measured');
+    expect(file.settings).toEqual({ volumeDb: -9.5, pageDetails: true, theme: 'light', reducedMotion: 'reduce', useMemory: false });
   });
 
   it('an exported file imports back unchanged', async () => {
@@ -98,6 +98,12 @@ describe('export and import', () => {
     const { theme: _theme, volumeDb: _volume, ...partial } = file.settings;
     const check = checkImport(JSON.stringify({ ...file, settings: partial }));
     expect(check.ok && check.file.settings).toEqual({ ...file.settings, theme: DEFAULT_SETTINGS.theme, volumeDb: DEFAULT_SETTINGS.volumeDb });
+  });
+
+  it('imports an older file that still has pace and linger rhythm settings, without them', async () => {
+    const file = await exportAll(await populated(), T0);
+    const check = checkImport(JSON.stringify({ ...file, settings: { ...file.settings, pace: 'measured', lingerMode: 'user' } }));
+    expect(check.ok && check.file.settings).toEqual(file.settings);
   });
 
   it('rejects files it cannot use, with short, plain reasons', async () => {

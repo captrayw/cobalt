@@ -1,5 +1,5 @@
 import { NullAudioEngine, WebAudioEngine, type AudioEngine } from '@calm/audio';
-import { emptyMemory, newSeed, PACE_PRESETS, prepareValidSession, type Memory } from '@calm/core';
+import { emptyMemory, newSeed, PACE_PRESETS, prepareValidSession, type LingerMode, type Memory, type PaceId } from '@calm/core';
 import * as core from '@calm/core';
 import { create } from 'zustand';
 import { FeedController } from './feed/controller';
@@ -132,6 +132,10 @@ function createEngine(volumeDb: number): AudioEngine {
   return hasWebAudio ? new WebAudioEngine({ volumeDb }) : new NullAudioEngine();
 }
 
+/** Owner change (Oct 2026): every session uses the 5 to 10 s pace and the gradual linger rhythm. */
+const PACE: PaceId = 'standard';
+const RHYTHM: LingerMode = 'gradual';
+
 /**
  * Start a fresh session. The session is generated, passes all nine checks, and draws on memory
  * when the switch is on. With `gesture` (a tap or key press, as on "Start next session") audio
@@ -144,10 +148,10 @@ export function startSession(gesture: boolean): void {
     return;
   }
   const { settings, memory } = state;
-  const session = prepareValidSession({ ...PACE_PRESETS[settings.pace], memory, useMemory: settings.useMemory }, newSeed);
+  const session = prepareValidSession({ ...PACE_PRESETS[PACE], memory, useMemory: settings.useMemory }, newSeed);
   const id = ulid(Date.now());
   const feed = new FeedController(
-    { id, session, mode: settings.lingerMode, pace: settings.pace, useMemory: settings.useMemory, memory: settings.useMemory ? memory : null },
+    { id, session, mode: RHYTHM, pace: PACE, useMemory: settings.useMemory, memory: settings.useMemory ? memory : null },
     {
       engine: createEngine(settings.volumeDb),
       hooks: {

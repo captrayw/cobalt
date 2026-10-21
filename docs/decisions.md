@@ -15,9 +15,9 @@ The brief lists four decisions to confirm before milestone 1. Until the owner sa
 
 ## Owner changes (October 2026)
 
-After trying version 1, the owner asked for three changes. They take precedence over the brief where the two differ.
+After trying version 1, the owner asked for these changes. They take precedence over the brief where the two differ.
 
-1. **No lead-in screen.** Opening the app goes straight into the feed: a session starts as soon as storage has opened. Browsers allow sound only after a gesture, so the colors start at once and the sound starts with the first swipe, tap or key. Swipes and taps are read on `pointerup`; `touchend` and `click` try again, because iOS may only count those as the gesture that lets sound start. A quiet "Swipe up for the next page" hint shows on the first page until the first touch. The pace, rhythm and memory switch moved to Settings and apply from the next session. "Done" on the summary leads to a quiet Done screen with "Start a session", Memory, Settings and About.
+1. **No lead-in screen.** Opening the app goes straight into the feed: a session starts as soon as storage has opened. Browsers allow sound only after a gesture, so the colors start at once and the sound starts with the first swipe, tap or key. Swipes and taps are read on `pointerup`; `touchend` and `click` try again, because iOS may only count those as the gesture that lets sound start. A quiet "Swipe up for the next page" hint shows on the first page until the first touch. The memory switch moved to Settings and applies from the next session (pace and rhythm moved there too, until owner change 4 removed them). "Done" on the summary leads to a quiet Done screen with "Start a session", Memory, Settings and About.
 2. **The voice holds.** Each page's note sounds steadily for as long as the person stays, and crossfades into the next page's note over the page's color crossfade (`xfade`), instead of the brief's single tone per page. This replaces the 0.25 s release of departure 2 below (`VOICE_RELEASE_TC` is gone): with one held voice, quick swipes cannot stack tones. A lingering breath is a swell on the held note, peaking at the brief's breath level and settling 10 dB below it (`VOICE.breathDepthDb`), never to silence. The 3-minute Rest still fades to silence, as a safeguard for sleep. When sound starts late (the first touch, or a resume), the voice comes in over 1 s (`VOICE.resumeFadeSec`).
 3. **Pace slicing.** Every 10 pages (`PACE_SLICING.checkEvery`), if the pages left would run out before 15 minutes at the person's average pace so far, the rest of the session is drawn again from the page on screen, with shorter pages (`sliceForPace` in `packages/core/src/pace.ts`):
    - The pages seen and the page on screen stay as they are.
@@ -27,6 +27,9 @@ After trying version 1, the owner asked for three changes. They take precedence 
    - The check is deterministic and runs while the browser is idle after the page change, so it never slows a swipe.
 
    It does nothing when the pages left already last at least 95% of the time left (`enoughShare`), or when slicing would not make pages shorter. Because no page goes under 2 s (the brief's no-flashing rule), a session ends before 15 minutes at a pace near or under 2 s per page. Scenarios 1 to 3 press ↓ every 2 to 4.5 s, so they now run with slicing in effect, and they still pass.
+4. **No pace or linger rhythm settings.** Every session uses the 5 to 10 s pace and the gradual rhythm. The core keeps the 12 to 24 s pace and the "2, 5, 9 s" rhythm, so the developer screen and the reducer's scenario 5 test still cover them, but the app no longer offers them. Rows an older version stored for them are skipped, and older export files still import without them. Scenario 5 now runs only as that unit test.
+5. **No disclaimer.** The "relaxation aid" line is gone from the Done screen, About and the page description. The app still makes no medical or therapeutic claims.
+6. **About names the maker.** It reads "a cobalt app by a color company", links to acolorcompany.com and ends with "© 2026 a color company. All rights reserved.", over a cobalt glow that breathes once every 10 s and holds still under reduced motion. The research summary and source list that About held are no longer in the app; they remain in the brief.
 
 ## Milestone gates
 
@@ -34,7 +37,7 @@ After trying version 1, the owner asked for three changes. They take precedence 
 |---|---|---|
 | 1 Core | Golden-file, color, determinism, validity, uniqueness, invariant, scoring, memory, learning-effect and linger tests | All pass except golden files, which need the reference code (below). |
 | 2 Audio | Audio render tests; listening check on an iPhone and an Android phone | Render tests pass. The listening check needs hardware and is not done. |
-| 3 Feed | Scenarios 1, 2 and 5 to 9 in Chromium and WebKit | Pass. Playwright's WebKit on Windows has no Web Audio, so there the feed runs on the silent engine; sound in Safari is left to the phone check. |
+| 3 Feed | Scenarios 1, 2 and 5 to 9 in Chromium and WebKit | Pass. Scenario 5 runs as a unit test since owner change 4 removed the rhythm choice. Playwright's WebKit on Windows has no Web Audio, so there the feed runs on the silent engine; sound in Safari is left to the phone check. |
 | 4 Learning in the app | Scenarios 3, 4 and 10 to 12; an exported file imports back unchanged | Pass. |
 | 5 PWA release | Scenario 13; installs and runs offline; axe finds no serious issues; performance budgets | Pass in headless browsers; not yet installed on a physical phone. |
 

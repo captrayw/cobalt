@@ -18,6 +18,9 @@
   --series-2: #d95926;
   --series-3: #199e70;
   --page-ink: #0b0e14;
+  /* The About glow: a soft cobalt, as an RGB triplet so its strength can vary by theme. */
+  --cobalt: 46 92 196;
+  --glow: 0.55;
 
   --radius: 10px;
   --font-head: 'Unbounded', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -43,6 +46,7 @@
     --series-1: #2a78d6;
     --series-2: #eb6834;
     --series-3: #1baf7a;
+    --glow: 0.24;
   }
 }
 
@@ -63,4 +67,5 @@
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
+  --glow: 0.24;
 }

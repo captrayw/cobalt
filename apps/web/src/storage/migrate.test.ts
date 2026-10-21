@@ -135,15 +135,15 @@ describe('snapshot migrations', () => {
 
 describe('setting migrations', () => {
   it('0 -> 1 wraps a bare value in a versioned row', () => {
-    expect(migrateSettingRow('pace', 'measured')).toEqual({ v: 1, name: 'pace', value: 'measured' });
-    expect(migrateSettingRow('pace', { v: 1, name: 'pace', value: 'standard' })).toEqual({ v: 1, name: 'pace', value: 'standard' });
-    expect(() => migrateSettingRow('pace', { v: 2, name: 'pace', value: 'x' })).toThrow(/newer version/);
+    expect(migrateSettingRow('theme', 'dark')).toEqual({ v: 1, name: 'theme', value: 'dark' });
+    expect(migrateSettingRow('theme', { v: 1, name: 'theme', value: 'light' })).toEqual({ v: 1, name: 'theme', value: 'light' });
+    expect(() => migrateSettingRow('theme', { v: 2, name: 'theme', value: 'x' })).toThrow(/newer version/);
   });
 
   it('returns a stored value only when it is valid', () => {
-    expect(migrateSettingValue('pace', 'measured')).toBe('measured');
-    expect(migrateSettingValue('lingerMode', { v: 1, name: 'lingerMode', value: 'user' })).toBe('user');
-    expect(migrateSettingValue('pace', 'fast')).toBeUndefined();
+    expect(migrateSettingValue('theme', 'dark')).toBe('dark');
+    expect(migrateSettingValue('reducedMotion', { v: 1, name: 'reducedMotion', value: 'reduce' })).toBe('reduce');
+    expect(migrateSettingValue('theme', 'sepia')).toBeUndefined();
     expect(migrateSettingValue('volumeDb', -40)).toBeUndefined();
     expect(migrateSettingValue('volumeDb', -30)).toBe(-30);
     expect(migrateSettingValue('theme', { v: 9, value: 'dark' })).toBeUndefined();

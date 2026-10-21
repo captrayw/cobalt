@@ -1,17 +1,7 @@
-import { USER_VOLUME_DB, type LingerMode, type PaceId } from '@calm/core';
+import { USER_VOLUME_DB } from '@calm/core';
 import { updateSettings, useApp } from '../store';
 import type { MotionSetting, ThemeSetting } from '../storage/types';
 import { Screen, Segmented, Switch } from '../ui';
-
-const PACES = [
-  { value: 'standard', label: '5–10 s' },
-  { value: 'measured', label: '12–24 s' },
-] as const satisfies readonly { value: PaceId; label: string }[];
-
-const RHYTHMS = [
-  { value: 'gradual', label: 'Gradual' },
-  { value: 'user', label: '2, 5, 9 s' },
-] as const satisfies readonly { value: LingerMode; label: string }[];
 
 const MOTION = [
   { value: 'system', label: 'System' },
@@ -32,28 +22,12 @@ export function SettingsScreen() {
   return (
     <Screen title="Settings">
       <section className="panel" aria-label="Session">
-        <Segmented
-          legend="Pace"
-          value={s.pace}
-          choices={PACES}
-          onChange={(pace) => void updateSettings({ pace })}
-          hint="Seconds per page. Measured viewing is slower, so the longer pace is offered too."
-        />
-        <Segmented
-          legend="Linger rhythm"
-          value={s.lingerMode}
-          choices={RHYTHMS}
-          onChange={(lingerMode) => void updateSettings({ lingerMode })}
-          hint="Gradual starts at the page's own pace and stretches each breath about 6%. The 2, 5, 9 s rhythm is kept for comparison."
-        />
-        <hr className="divider" />
         <Switch
           label="Use what I lingered on"
-          hint="Brings back pages you stayed on, and gently favors their colors and notes."
+          hint="Brings back pages you stayed on, and gently favors their colors and notes. Applies from the next session."
           checked={s.useMemory}
           onChange={(useMemory) => void updateSettings({ useMemory })}
         />
-        <p className="hint">Changes apply from the next session.</p>
       </section>
 
       <section className="panel" aria-label="Sound">

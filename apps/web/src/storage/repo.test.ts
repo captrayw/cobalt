@@ -172,30 +172,36 @@ describe('repository', () => {
 
   it('merges stored settings with the defaults, validates patches and ignores unreadable rows', async () => {
     const { repo, factory, name } = freshRepo();
-    expect(await repo.saveSettings({ pace: 'measured', volumeDb: -12 })).toEqual({ ...DEFAULT_SETTINGS, pace: 'measured', volumeDb: -12 });
-    expect(await repo.saveSettings({ theme: 'light', lingerMode: 'user', pageDetails: true })).toEqual({
+    expect(await repo.saveSettings({ useMemory: false, volumeDb: -12 })).toEqual({ ...DEFAULT_SETTINGS, useMemory: false, volumeDb: -12 });
+    expect(await repo.saveSettings({ theme: 'light', pageDetails: true })).toEqual({
       ...DEFAULT_SETTINGS,
-      pace: 'measured',
+      useMemory: false,
       volumeDb: -12,
       theme: 'light',
-      lingerMode: 'user',
       pageDetails: true,
     });
     await expect(repo.saveSettings({ volumeDb: 6 })).rejects.toThrow(/volumeDb/);
-    await expect(repo.saveSettings({ pace: 'fast' as never })).rejects.toThrow(/pace/);
+    await expect(repo.saveSettings({ theme: 'sepia' as never })).rejects.toThrow(/theme/);
     await expect(repo.saveSettings({ loud: true } as never)).rejects.toThrow(/no setting called loud/);
+    // Pace and linger rhythm are no longer settings (owner change, Oct 2026).
+    await expect(repo.saveSettings({ pace: 'measured' } as never)).rejects.toThrow(/no setting called pace/);
 
-    // Rows written by hand: garbage is ignored, an unversioned bare value is migrated.
+    // Rows written by hand: garbage is ignored, an unversioned bare value is migrated, and the
+    // pace and linger rhythm rows an older version stored are skipped.
     const db = await openCalmDb(name, factory);
     await db.put(STORES.settings, { v: 1, name: 'reducedMotion', value: 'sometimes' }, 'reducedMotion');
     await db.put(STORES.settings, 'reduce', 'reducedMotion');
     await db.put(STORES.settings, { v: 1, name: 'useMemory', value: 'yes' }, 'useMemory');
     await db.put(STORES.settings, { v: 1, name: 'unknown', value: 1 }, 'unknown');
+    await db.put(STORES.settings, { v: 1, name: 'pace', value: 'measured' }, 'pace');
+    await db.put(STORES.settings, { v: 1, name: 'lingerMode', value: 'user' }, 'lingerMode');
     db.close();
     const settings = await repo.loadSettings();
     expect(settings.reducedMotion).toBe('reduce');
     expect(settings.useMemory).toBe(DEFAULT_SETTINGS.useMemory);
     expect(settings).not.toHaveProperty('unknown');
+    expect(settings).not.toHaveProperty('pace');
+    expect(settings).not.toHaveProperty('lingerMode');
   });
 
   it('reset keeps settings, empties memory and sessions, and leaves a snapshot', async () => {

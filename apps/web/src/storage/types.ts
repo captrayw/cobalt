@@ -4,9 +4,11 @@ export type ThemeSetting = 'system' | 'dark' | 'light';
 /** Reduced-motion override: follow the system, always reduce, or always allow motion. */
 export type MotionSetting = 'system' | 'reduce' | 'allow';
 
+/**
+ * Owner change (Oct 2026): pace and linger rhythm are no longer settings. Every session uses the
+ * 5 to 10 s pace and the gradual rhythm; rows an older version stored for them are ignored.
+ */
 export interface Settings {
-  pace: PaceId;
-  lingerMode: LingerMode;
   /** The "Use what I lingered on" switch. */
   useMemory: boolean;
   /** User volume, -30 to 0 dB. */
@@ -18,8 +20,6 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  pace: 'standard',
-  lingerMode: 'gradual',
   useMemory: true,
   volumeDb: 0,
   pageDetails: false,

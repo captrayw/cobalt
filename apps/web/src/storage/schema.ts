@@ -132,8 +132,6 @@ export const SessionDocSchema: z.ZodType<SessionDoc> = z
   .refine((doc) => doc.maxDwell >= doc.minDwell, 'maxDwell must not be below minDwell');
 
 export const SettingsSchema = z.object({
-  pace: z.enum(PACE_IDS),
-  lingerMode: z.enum(LINGER_MODES),
   useMemory: z.boolean(),
   volumeDb: z.number().min(USER_VOLUME_DB.min).max(USER_VOLUME_DB.max),
   pageDetails: z.boolean(),
