@@ -42,7 +42,7 @@ export function Summary() {
   const lingered = summary.records.filter((r) => r.linger);
 
   return (
-    <Screen title="Session ended" back={false}>
+    <Screen title="Session ended" back={false} fill>
       <div className="stats" data-testid="summary-stats">
         <Stat label="Pages watched" value={<span data-testid="watched">{watched}</span>} />
         <Stat label="Total time" value={formatClock(seconds)} />
@@ -65,7 +65,7 @@ export function Summary() {
         {note && <p className="notice">{note}</p>}
       </section>
 
-      <div className="btn-row">
+      <div className="btn-row btn-row-stack">
         <button type="button" className="btn" onClick={() => startSession(true)}>
           Start next session
         </button>

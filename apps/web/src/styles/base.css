@@ -119,6 +119,22 @@ h1[tabindex='-1']:focus {
   gap: 28px;
 }
 
+/* A screen whose last block, its buttons, sits at the bottom of the screen when the content is
+   shorter, and simply follows the content when it is longer. */
+.screen-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-fill > .column {
+  flex: 1;
+  width: 100%;
+}
+
+.screen-fill > .column > :last-child {
+  margin-top: auto;
+}
+
 .stack {
   display: flex;
   flex-direction: column;
@@ -287,6 +303,13 @@ h1[tabindex='-1']:focus {
 
 .btn-row .btn {
   padding-inline: 10px;
+}
+
+/* Two equal choices with longer labels: side by side where both fit on one line, stacked on phones. */
+@media (max-width: 440px) {
+  .btn-row-stack {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Navigation list */

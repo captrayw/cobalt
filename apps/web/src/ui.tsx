@@ -25,12 +25,27 @@ export function BackButton() {
   );
 }
 
-/** One screen: a single column up to 640 px. Focus moves to its heading when it opens. */
-export function Screen({ title, intro, back = true, children }: { title: string; intro?: ReactNode; back?: boolean; children: ReactNode }) {
+/**
+ * One screen: a single column up to 640 px. Focus moves to its heading when it opens. With `fill`,
+ * the last block (a screen's buttons) sits at the bottom of the screen when the content is shorter.
+ */
+export function Screen({
+  title,
+  intro,
+  back = true,
+  fill = false,
+  children,
+}: {
+  title: string;
+  intro?: ReactNode;
+  back?: boolean;
+  fill?: boolean;
+  children: ReactNode;
+}) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus({ preventScroll: true }), []);
   return (
-    <main className="screen">
+    <main className={fill ? 'screen screen-fill' : 'screen'}>
       <div className="column">
         <header className="screen-head">
           {back && <BackButton />}
