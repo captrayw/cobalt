@@ -62,8 +62,7 @@ export function About() {
         </p>
         <p>
           Each change stays small, because responses fade with repetition and return with sudden novelty.
-          <Refs n={[28]} />
-          The 2, 5, 9 second rhythm is kept for comparison. Its 2 second opening equals thirty breaths a minute, so it is not the default.
+          <Refs n={[28]} /> The 2, 5, 9 second rhythm is kept for comparison. Its 2 second opening equals thirty breaths a minute, so it is not the default.
         </p>
       </section>
 
@@ -86,8 +85,7 @@ export function About() {
         <p>
           The next session may bring a remembered page back by chance, inside its original group and never more than a quarter of a group, so
           most of each session stays new.
-          <Refs n={[2, 34, 35]} />
-          Scores fade 15% each session. You can turn this off on the Home screen.
+          <Refs n={[2, 34, 35]} /> Scores fade 15% each session. You can turn this off on the Home screen.
         </p>
       </section>
 

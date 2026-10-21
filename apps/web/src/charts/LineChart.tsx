@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 
 export interface LineSeries {
   key: string;
@@ -9,24 +9,44 @@ export interface LineSeries {
   values: number[];
 }
 
-const W = 640;
-const H = 236;
-const M = { top: 14, right: 118, bottom: 34, left: 44 };
-const PLOT_W = W - M.left - M.right;
-const PLOT_H = H - M.top - M.bottom;
 const Y_TICKS = [0, 0.25, 0.5, 0.75, 1];
-/** End labels closer than this (viewBox px) would collide; then the legend carries identity alone. */
+/** End labels closer than this (px) would collide; then the legend carries identity alone. */
 const LABEL_GAP = 16;
+/** Below this width there is no room for end labels; the legend and tooltip carry the values. */
+const END_LABEL_MIN_WIDTH = 480;
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+/** The element's width in CSS pixels, kept current as it resizes. */
+function useWidth(fallback: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(fallback);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(Math.max(240, Math.round(el.clientWidth)));
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
 
 /**
  * A small share-over-sessions line chart: 2px lines, ringed end dots, hairline grid, a legend,
  * selective end labels, a crosshair tooltip on hover and keyboard focus, and a table view.
+ * It draws at its real pixel width, so text stays 12 px on a phone and on a desktop.
  */
 export function LineChart({ title, xLabel, xValues, series, testId }: { title: string; xLabel: string; xValues: number[]; series: LineSeries[]; testId?: string }) {
   const id = useId();
+  const [box, W] = useWidth(360);
   const [hover, setHover] = useState<number | null>(null);
+  const roomy = W >= END_LABEL_MIN_WIDTH;
+  const H = roomy ? 236 : 200;
+  const M = { top: 14, right: roomy ? 118 : 14, bottom: 34, left: 40 };
+  const PLOT_W = W - M.left - M.right;
+  const PLOT_H = H - M.top - M.bottom;
   const n = xValues.length;
   const top = Math.max(0.25, ...series.flatMap((s) => s.values));
   const yMax = Math.min(1, Math.ceil(top * 4) / 4);
@@ -35,11 +55,11 @@ export function LineChart({ title, xLabel, xValues, series, testId }: { title: s
   const x = (i: number) => M.left + (n <= 1 ? PLOT_W / 2 : (i / (n - 1)) * PLOT_W);
   const y = (v: number) => M.top + PLOT_H - (Math.min(v, yMax) / yMax) * PLOT_H;
 
-  // End labels ride the lines unless they would collide; the legend always carries identity.
-  const ends = n === 0 ? [] : series.map((s) => ({ key: s.key, label: s.label, value: s.values[n - 1], y: y(s.values[n - 1]) })).sort((a, b) => a.y - b.y);
+  // End labels ride the lines when there is room and they do not collide; the legend always carries identity.
+  const ends = n === 0 || !roomy ? [] : series.map((s) => ({ key: s.key, label: s.label, value: s.values[n - 1], y: y(s.values[n - 1]) })).sort((a, b) => a.y - b.y);
   const endLabels = ends.some((e, i) => i > 0 && e.y - ends[i - 1].y < LABEL_GAP) ? [] : ends;
 
-  const xTickEvery = Math.max(1, Math.ceil(n / 8));
+  const xTickEvery = Math.max(1, Math.ceil(n / (roomy ? 8 : 5)));
 
   const onPointer = (e: PointerEvent<SVGRectElement>) => {
     const box = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
@@ -72,9 +92,11 @@ export function LineChart({ title, xLabel, xValues, series, testId }: { title: s
           </li>
         ))}
       </ul>
-      <div style={{ position: 'relative' }}>
+      <div ref={box} style={{ position: 'relative' }}>
         <svg
           className="chart-plot"
+          width={W}
+          height={H}
           viewBox={`0 0 ${W} ${H}`}
           role="img"
           aria-labelledby={`${id}-desc`}

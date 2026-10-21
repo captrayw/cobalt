@@ -1,6 +1,6 @@
 import { PreviewPlayer, WebAudioEngine, type PreviewSpeed } from '@calm/audio';
 import { CHECK_IDS, newSeed, PACE_PRESETS, parseSeed, prepareSession, type CheckId, type PaceId, type Session } from '@calm/core';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../store';
 import { formatClock, Screen, Segmented, Switch } from '../ui';
 
@@ -32,12 +32,9 @@ export function Dev() {
   const [session, setSession] = useState<Session | null>(null);
   const [ms, setMs] = useState(0);
   const [playing, setPlaying] = useState<{ speed: PreviewSpeed; page: number } | null>(null);
-  const player = useRef(new PreviewPlayer());
+  const [player] = useState(() => new PreviewPlayer());
 
-  useEffect(() => {
-    const p = player.current;
-    return () => p.stop();
-  }, []);
+  useEffect(() => () => player.stop(), [player]);
 
   const generate = () => {
     const seed = seedText.trim() === '' ? newSeed() : parseSeed(seedText);
@@ -50,7 +47,7 @@ export function Dev() {
   const play = (speed: PreviewSpeed) => {
     if (!session) return;
     setPlaying({ speed, page: 0 });
-    player.current.play(session, speed, new WebAudioEngine({ volumeDb: useApp.getState().settings.volumeDb }), {
+    player.play(session, speed, new WebAudioEngine({ volumeDb: useApp.getState().settings.volumeDb }), {
       onPage: (page) => setPlaying((p) => (p ? { ...p, page } : p)),
       onEnd: () => setPlaying(null),
     });
@@ -117,7 +114,7 @@ export function Dev() {
                 <span className="num small">
                   {playing.speed}× · page {playing.page + 1} of {session.items.length}
                 </span>
-                <button type="button" className="btn" onClick={() => player.current.stop()}>
+                <button type="button" className="btn" onClick={() => player.stop()}>
                   Stop
                 </button>
               </div>
