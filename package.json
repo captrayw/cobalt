@@ -18,7 +18,7 @@
     "test:audio": "pnpm --filter @calm/audio test",
     "e2e": "pnpm --filter @calm/web e2e",
     "golden:export": "node golden/export.mjs",
-    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:audio && pnpm build && pnpm e2e"
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:audio && pnpm build && pnpm e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

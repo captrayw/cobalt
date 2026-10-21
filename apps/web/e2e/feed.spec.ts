@@ -92,6 +92,28 @@ test('scenario 8: hidden for 300 s, no rest starts and the 300 s stays out of th
   expect(s!.records[0].sleep).toBe(false);
 });
 
+test('an audio interruption pauses the feed with "Tap to resume", and a tap resumes it', async ({ page }) => {
+  await openWithClock(page);
+  await startSession(page);
+  await page.clock.runFor(2000);
+  // The browser took the audio away (a call, another app): the context reports a non-running state.
+  await page.evaluate(() => window.__calm!.getState().feed!.dispatch({ type: 'interrupted', at: performance.now() }));
+  await expect(page.getByText('Tap to resume')).toBeVisible();
+  await page.clock.runFor(30_000);
+  expect((await feed(page))!.status).toBe('paused');
+  await page.locator('main.feed').click({ position: { x: 200, y: 300 } });
+  await expect(page.getByText('Tap to resume')).toBeHidden();
+  await page.clock.runFor(400);
+  const s = await feed(page);
+  expect(s!.status).toBe('lingering');
+  expect(s!.breath).toBe(1);
+  await page.keyboard.press('ArrowDown');
+  // Paused time stays out of the dwell: 2 s before the interruption, 0.4 s after the tap.
+  const after = await feed(page);
+  expect(after!.records[0].dwell).toBeGreaterThan(2.3);
+  expect(after!.records[0].dwell).toBeLessThan(2.6);
+});
+
 test('scenario 9: three wheel events 60 ms apart advance one page; one more 400 ms later advances one more', async ({ page }) => {
   await openWithClock(page);
   await startSession(page);

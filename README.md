@@ -37,7 +37,7 @@ pnpm typecheck
 pnpm test           # core and app unit tests (Vitest), incl. property tests (fast-check)
 pnpm test:audio     # offline audio renders in Chromium (Vitest browser mode)
 pnpm e2e            # Playwright: feed scenarios in Chromium and WebKit, axe, offline, budgets
-pnpm ci             # all of the above, as CI runs them
+pnpm verify         # all of the above, as CI runs them
 ```
 
 Install Playwright's browsers once with `pnpm --filter @calm/web exec playwright install chromium webkit`.
