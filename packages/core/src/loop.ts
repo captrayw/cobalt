@@ -248,11 +248,14 @@ export function canReturn(p: PageMemory): boolean {
 /**
  * Carry-over: remembered pages return by Thompson sampling, inside their original group and never
  * above 25% of a group. Each insert is revalidated and undone when any check fails.
- * Pass a PRNG seeded from the session seed XOR CARRY_SALT.
+ * Pass a PRNG seeded from the session seed XOR CARRY_SALT. `firstSlot` limits the inserts to pages
+ * from that index on (a re-sliced session keeps the pages already seen); remembered pages already
+ * in the session count toward each group's cap.
  */
-export function applyMemory(session: Session, memory: Memory | null | undefined, rng: Rng): Session {
+export function applyMemory(session: Session, memory: Memory | null | undefined, rng: Rng, firstSlot = 1): Session {
   const remembered = memory ? Object.values(memory.pages).filter(canReturn) : [];
-  if (remembered.length === 0) return { ...session, items: session.items.map((p) => ({ ...p })), inserted: 0 };
+  const already = session.items.filter((p) => p.memKey !== undefined).length;
+  if (remembered.length === 0) return { ...session, items: session.items.map((p) => ({ ...p })), inserted: already };
 
   const items = session.items.map((p) => ({ ...p }));
   const drawn = remembered.map((p) => ({ p, theta: betaSample(rng, p.a, p.b) }));
@@ -261,9 +264,10 @@ export function applyMemory(session: Session, memory: Memory | null | undefined,
   const groupSize = new Array<number>(GROUP_COUNT + 1).fill(0);
   for (const it of items) groupSize[it.phase] += 1;
   const used = new Array<number>(GROUP_COUNT + 1).fill(0);
+  for (const it of items) if (it.memKey !== undefined) used[it.phase] += 1;
   const present = new Set(items.map(keyOf));
   let validation = session.validation;
-  let inserted = 0;
+  let inserted = already;
 
   for (const { p, theta } of drawn) {
     if (rng() > theta) continue;
@@ -273,7 +277,7 @@ export function applyMemory(session: Session, memory: Memory | null | undefined,
     // Interior pages of the same group, not already from memory, whose two neighbors each differ in
     // family and lie within 0.08 of its lightness and 7 semitones of its note.
     const slots: number[] = [];
-    for (let i = 1; i < items.length - 1; i++) {
+    for (let i = Math.max(1, firstSlot); i < items.length - 1; i++) {
       const s = items[i];
       if (s.phase !== p.phase || s.memKey !== undefined) continue;
       const fits = (q: Page) =>

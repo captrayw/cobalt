@@ -27,6 +27,11 @@ function fakeEngine() {
       return state === 'running';
     }),
     tone: record('tone'),
+    voice: (...args: unknown[]) => {
+      calls.push({ method: 'voice', args });
+      return state === 'running';
+    },
+    breath: record('breath'),
     drones: record('drones'),
     setMaster: record('setMaster'),
     now: () => 100,
@@ -77,7 +82,7 @@ describe('feed controller', () => {
     const finished: SessionDoc[] = [];
     const wake: boolean[] = [];
     const feed = new FeedController(
-      { id: '01TEST', session, mode: 'gradual', pace: 'standard', useMemory: true },
+      { id: '01TEST', session, mode: 'gradual', pace: 'standard', useMemory: true, memory: null },
       {
         engine: audio.engine,
         hooks: { checkpoint: (d) => checkpoints.push(d), finish: (d) => finished.push(d) },
@@ -90,18 +95,67 @@ describe('feed controller', () => {
     return { feed, audio, checkpoints, finished, wake, advance };
   }
 
-  it('starts inside the gesture: unlocks audio and schedules the first tone 30 ms ahead', () => {
+  it('starts inside the gesture: unlocks audio and brings in the page voice 30 ms ahead', () => {
     const { feed, audio, wake } = setup();
     feed.start();
     expect(audio.engine.unlock).toHaveBeenCalledTimes(1);
     const p = session.items[0];
-    expect(audio.calls).toContainEqual({ method: 'tone', args: [p.hz, 100.03, p.dwell, p.gainDb, 0.4] });
+    expect(audio.calls).toContainEqual({ method: 'voice', args: [p.hz, p.gainDb, 100.03, p.xfade] });
     expect(audio.calls).toContainEqual({ method: 'drones', args: [p.drone, p.gainDb, 100.03] });
     expect(wake.at(-1)).toBe(true);
     expect(feed.getView()).toMatchObject({ status: 'showing', index: 0, total: session.items.length });
   });
 
-  it('runs the single timer: the planned dwell, then breaths of lingerCycle length', () => {
+  it('opened without a gesture: the colors run, and the first touch brings in the voice', async () => {
+    const { feed, audio } = setup();
+    feed.attach();
+    feed.start(false);
+    expect(audio.engine.unlock).not.toHaveBeenCalled();
+    expect(feed.state.status).toBe('showing');
+    skip(3000);
+    feed.activity(true);
+    expect(audio.engine.unlock).toHaveBeenCalledTimes(1);
+    await settle();
+    const p = session.items[0];
+    // The held voice starts now, fading in over a second, with the drones of its group.
+    expect(audio.calls.filter((c) => c.method === 'voice').at(-1)).toEqual({ method: 'voice', args: [p.hz, p.gainDb, 100.03, 1] });
+    expect(audio.calls.filter((c) => c.method === 'drones').at(-1)).toEqual({ method: 'drones', args: [p.drone, p.gainDb, 100.03] });
+    // It is not started twice when the context also reports that it runs.
+    const voices = audio.calls.filter((c) => c.method === 'voice').length;
+    audio.emit('running');
+    expect(audio.calls.filter((c) => c.method === 'voice')).toHaveLength(voices);
+  });
+
+  it('a touchend or click asks for audio again while the try from pointerup is still in flight', async () => {
+    const { feed, audio } = setup();
+    feed.attach();
+    feed.start(false);
+    // The swipe's try came from an event this browser does not count as a gesture: it never settles.
+    vi.mocked(audio.engine.unlock).mockImplementationOnce(() => new Promise<boolean>(() => undefined));
+    skip(1000);
+    feed.next();
+    expect(audio.engine.unlock).toHaveBeenCalledTimes(1);
+    feed.unlock();
+    expect(audio.engine.unlock).toHaveBeenCalledTimes(2);
+    await settle();
+    audio.emit('running');
+    const p = session.items[1];
+    expect(audio.calls.filter((c) => c.method === 'voice').at(-1)).toEqual({ method: 'voice', args: [p.hz, p.gainDb, 100.03, 1] });
+    // Once audio runs, further touches leave it alone.
+    feed.unlock();
+    expect(audio.engine.unlock).toHaveBeenCalledTimes(2);
+  });
+
+  it('a touchend or click after the session ends starts nothing', () => {
+    const { feed, audio } = setup();
+    feed.start(false);
+    skip(1000);
+    feed.end();
+    feed.unlock();
+    expect(audio.engine.unlock).not.toHaveBeenCalled();
+  });
+
+  it('runs the single timer: the planned dwell, then breaths of lingerCycle length on the held voice', () => {
     const { feed, audio, advance } = setup();
     feed.start();
     const p = session.items[0];
@@ -109,10 +163,30 @@ describe('feed controller', () => {
     expect(feed.state.status).toBe('showing');
     advance(1);
     expect(feed.state.status).toBe('lingering');
-    const breath = audio.calls.filter((c) => c.method === 'tone')[1];
-    expect(breath.args[2]).toBeCloseTo(lingerCycle(p.dwell, 1, 'gradual'), 12);
+    const breath = audio.calls.filter((c) => c.method === 'breath')[0];
+    expect(breath.args.slice(1)).toEqual([lingerCycle(p.dwell, 1, 'gradual'), 0.3875, p.gainDb - 1, p.gainDb - 11]);
+    expect(audio.calls.filter((c) => c.method === 'voice')).toHaveLength(1);
     advance(lingerCycle(p.dwell, 1, 'gradual') * 1000);
     expect(feed.state.breath).toBe(2);
+  });
+
+  it('a quick pace in the first 10 pages slices the rest of the session into shorter pages', async () => {
+    const { feed, advance } = setup();
+    feed.start();
+    for (let i = 0; i < 10; i++) {
+      skip(2_500);
+      feed.next();
+    }
+    expect(feed.state.session).toBe(session);
+    // The check runs once the page change is done.
+    advance(1);
+    const sliced = feed.state.session;
+    expect(sliced.items.length).toBeGreaterThan(session.items.length + 150);
+    expect(sliced.items.slice(0, 11)).toEqual(session.items.slice(0, 11));
+    expect(feed.state.index).toBe(10);
+    expect(feed.getView().total).toBe(sliced.items.length);
+    // At the same pace, the pages left now last until about 15 minutes.
+    expect(25 + (sliced.items.length - 11) * 2.5).toBeGreaterThan(0.95 * 900);
   });
 
   it('notifies listeners only when the view changes', () => {

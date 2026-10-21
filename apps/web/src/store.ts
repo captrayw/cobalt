@@ -12,7 +12,7 @@ export interface AppState {
   repo: CalmRepo | null;
   settings: Settings;
   memory: Memory;
-  /** The most recent finished session, for the line on Home. */
+  /** The most recent finished session, for the line on the Done screen. */
   lastSession: SessionDoc | null;
   /** The running feed, if any. */
   feed: FeedController | null;
@@ -133,10 +133,11 @@ function createEngine(volumeDb: number): AudioEngine {
 }
 
 /**
- * Start a fresh session. Call it inside the tap or key press, so the audio context can unlock.
- * The session is generated, passes all nine checks, and draws on memory when the switch is on.
+ * Start a fresh session. The session is generated, passes all nine checks, and draws on memory
+ * when the switch is on. With `gesture` (a tap or key press, as on "Start next session") audio
+ * unlocks at once; without it (opening the app) sound starts with the first touch in the feed.
  */
-export function startSession(): void {
+export function startSession(gesture: boolean): void {
   const state = useApp.getState();
   if (state.feed && state.feed.state.status !== 'ended') {
     navigate('feed');
@@ -146,7 +147,7 @@ export function startSession(): void {
   const session = prepareValidSession({ ...PACE_PRESETS[settings.pace], memory, useMemory: settings.useMemory }, newSeed);
   const id = ulid(Date.now());
   const feed = new FeedController(
-    { id, session, mode: settings.lingerMode, pace: settings.pace, useMemory: settings.useMemory },
+    { id, session, mode: settings.lingerMode, pace: settings.pace, useMemory: settings.useMemory, memory: settings.useMemory ? memory : null },
     {
       engine: createEngine(settings.volumeDb),
       hooks: {
@@ -159,7 +160,7 @@ export function startSession(): void {
   );
   holdSessionLock(id);
   useApp.setState({ feed, summary: null });
-  feed.start();
+  feed.start(gesture);
   navigate('feed');
 }
 

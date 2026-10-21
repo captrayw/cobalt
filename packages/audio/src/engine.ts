@@ -10,6 +10,20 @@ export interface AudioEngine {
   unlock(): Promise<boolean>;
   /** One voice: a sine at hz plus its second harmonic, with an inhale-weighted envelope. */
   tone(hz: number, at: number, dur: number, gainDb: number, inhale: number): void;
+  /**
+   * Start the page's voice: a sustained sine at hz plus its second harmonic (through a 0.1 gain), at
+   * TONE.peak x 10^(gainDb/20). It fades in linearly from silence over fadeSec (at least
+   * VOICE.minFadeSec) while every earlier voice fades out linearly over the same time and then stops.
+   * It holds its level until the next voice() or close(). Returns false, scheduling nothing, when the
+   * context is not running.
+   */
+  voice(hz: number, gainDb: number, at: number, fadeSec: number): boolean;
+  /**
+   * One breath on the current voice: from its held value at `at`, an exponential rise to peakDb
+   * (TONE.peak x 10^(peakDb/20)) by at + inhale x cycleSec, then an exponential fall to troughDb by
+   * at + cycleSec. Never to silence. No-op without a current voice or when the context is not running.
+   */
+  breath(at: number, cycleSec: number, inhale: number, peakDb: number, troughDb: number): void;
   /** Sustain these MIDI notes as drones at the page level; new drones fade in over 3 s. */
   drones(midis: readonly number[], gainDb: number, at: number): void;
   /** Master gain target (0.9 normal, 0.0001 silent). Cancels scheduled master automation first. */
@@ -25,7 +39,7 @@ export interface AudioEngine {
   // Additions to the brief's interface, used by the feed and the developer preview.
   /** User volume from -30 to 0 dB. It can never boost. */
   setVolume(db: number): void;
-  /** Fade every sounding tone (not the drones) with this time constant, as on a page change. */
+  /** Fade every sounding tone and the held voice (not the drones) with this time constant. */
   releaseVoices(timeConstant: number): void;
   /** Fade the drones out with this time constant, as at the end of a preview. */
   fadeDrones(timeConstant: number): void;

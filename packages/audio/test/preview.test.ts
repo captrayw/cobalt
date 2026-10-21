@@ -23,6 +23,13 @@ class FakeEngine implements AudioEngine {
   tone(...args: unknown[]) {
     this.record('tone', args);
   }
+  voice(...args: unknown[]) {
+    this.record('voice', args);
+    return true;
+  }
+  breath(...args: unknown[]) {
+    this.record('breath', args);
+  }
   drones(...args: unknown[]) {
     this.record('drones', args);
   }

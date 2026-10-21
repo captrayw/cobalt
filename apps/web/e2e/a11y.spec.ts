@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { openWithClock, rememberOnePage, startSession } from './helpers';
+import { openWithClock, pauseSoon, rememberOnePage, startSession } from './helpers';
 
 /**
  * Wait until fades (180 ms text fade-ins, the dim layer's opacity) have finished, so axe sees final
@@ -32,11 +32,13 @@ for (const colorScheme of ['dark', 'light'] as const) {
     test.use({ colorScheme });
 
     test('every screen has no serious or critical issues', async ({ page }) => {
+      // Six axe passes plus the sandbox's 3,000 simulated sessions: near the default limit in WebKit.
+      test.slow();
       await rememberOnePage(page);
       await page.clock.resume();
       expect(await seriousIssues(page), 'summary').toEqual([]);
 
-      for (const route of ['/', '/#/settings', '/#/about', '/#/memory', '/#/dev']) {
+      for (const route of ['/#/done', '/#/settings', '/#/about', '/#/memory', '/#/dev']) {
         await page.goto(route);
         await expect(page.locator('h1')).toBeVisible();
         if (route === '/#/memory') {
@@ -51,18 +53,17 @@ for (const colorScheme of ['dark', 'light'] as const) {
       }
     });
 
-    test('the feed, its page details, rest screen and summary have no serious or critical issues', async ({ page }) => {
+    test('the feed with its first-page hint, page details, rest and paused screens have no serious or critical issues', async ({ page }) => {
       await openWithClock(page, '/#/settings');
       await page.getByRole('switch', { name: 'Page details' }).click();
-      await page.goto('/');
       await startSession(page);
+      await expect(page.getByText('Swipe up for the next page', { exact: true })).toBeVisible();
       await page.clock.runFor(1000);
       await expect(page.locator('.feed-details')).toBeVisible();
       // axe schedules its own timers, so let time flow while it runs.
       await page.clock.resume();
       expect(await seriousIssues(page), 'feed').toEqual([]);
-      const now = await page.evaluate(() => Date.now());
-      await page.clock.pauseAt(now + 3000);
+      await pauseSoon(page, 3000);
       await page.clock.runFor(200_000);
       await expect(page.getByText('Resting', { exact: true })).toBeVisible();
       await page.clock.resume();

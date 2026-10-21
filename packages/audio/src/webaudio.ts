@@ -9,6 +9,7 @@ import {
   SCHEDULE,
   TONE,
   USER_VOLUME_DB,
+  VOICE,
   VOLUME_TC,
 } from '@calm/core';
 import type { AudioEngine, EngineState } from './engine.ts';
@@ -40,6 +41,15 @@ interface Drone {
   oscillator: OscillatorNode;
   gain: TrackedParam;
   startAt: number;
+}
+
+/** A page's sustained voice: it holds until the next voice() replaces it with a crossfade. */
+interface HeldVoice {
+  oscillators: OscillatorNode[];
+  gain: TrackedParam;
+  startAt: number;
+  /** Infinity while held; set when it fades out. */
+  stopAt: number;
 }
 
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
@@ -75,6 +85,9 @@ export class WebAudioEngine implements AudioEngine {
   private master: TrackedParam | null = null;
   private volume: number;
   private readonly voices = new Set<Voice>();
+  /** The page's voice now holding, and earlier ones still fading out. */
+  private held: HeldVoice | null = null;
+  private readonly fading = new Set<HeldVoice>();
   private readonly droneVoices = new Map<number, Drone>();
   private readonly listeners = new Set<(state: EngineState) => void>();
   private closing: Promise<void> | null = null;
@@ -101,6 +114,11 @@ export class WebAudioEngine implements AudioEngine {
 
   get volumeDb(): number {
     return this.volume;
+  }
+
+  /** Held and fading page voices still tracked, for tests and analysis. */
+  get heldVoices(): number {
+    return (this.held ? 1 : 0) + this.fading.size;
   }
 
   private attach(ctx: BaseAudioContext): void {
@@ -161,20 +179,25 @@ export class WebAudioEngine implements AudioEngine {
   }
 
   /**
-   * Voices are scheduled before the context first runs (the first page tone waits for the unlock),
-   * but not once a running context has stopped: its clock is frozen, so every tone queued then
-   * would start at the same moment when it resumes.
+   * Tones are scheduled before the context first runs (the preview's first tone waits for the
+   * unlock), but not once a running context has stopped: its clock is frozen, so every tone queued
+   * then would start at the same moment when it resumes.
    */
-  private canVoice(ctx: BaseAudioContext): boolean {
+  private canTone(ctx: BaseAudioContext): boolean {
     // An offline render suspends itself on purpose, to let callers schedule mid-render.
     if (isOffline(ctx)) return true;
     if (ctx.state === 'running') this.ran = true;
     return !this.ran || ctx.state === 'running';
   }
 
+  /** Held voices, breaths and drones are only scheduled while a real-time context is running. */
+  private canHold(ctx: BaseAudioContext): boolean {
+    return isOffline(ctx) || ctx.state === 'running';
+  }
+
   tone(hz: number, at: number, dur: number, gainDb: number, inhale: number): void {
     const live = this.live();
-    if (!live || !this.canVoice(live.ctx)) return;
+    if (!live || !this.canTone(live.ctx)) return;
     const { ctx, graph } = live;
     const env = toneEnvelope(dur, gainDb, inhale);
     const voiceGain = ctx.createGain();
@@ -208,9 +231,76 @@ export class WebAudioEngine implements AudioEngine {
     };
   }
 
+  voice(hz: number, gainDb: number, at: number, fadeSec: number): boolean {
+    const live = this.live();
+    if (!live || !this.canHold(live.ctx)) return false;
+    const { ctx, graph } = live;
+    const fade = Math.max(VOICE.minFadeSec, fadeSec);
+    // The voice holding now fades out from its exact value at `at`, even mid fade-in.
+    if (this.held) this.fadeOut(this.held, at, fade, ctx.currentTime);
+
+    const voiceGain = ctx.createGain();
+    const gain = new TrackedParam(voiceGain.gain, 0);
+    gain.setValueAtTime(0, at);
+    gain.linearRampToValueAtTime(TONE.peak * dbToGain(gainDb), at + fade);
+
+    const fundamental = ctx.createOscillator();
+    fundamental.type = 'sine';
+    fundamental.frequency.value = hz;
+    const overtone = ctx.createOscillator();
+    overtone.type = 'sine';
+    overtone.frequency.value = 2 * hz;
+    const overtoneGain = ctx.createGain();
+    overtoneGain.gain.value = TONE.harmonic;
+    fundamental.connect(voiceGain);
+    overtone.connect(overtoneGain).connect(voiceGain);
+    voiceGain.connect(graph.user);
+
+    const voice: HeldVoice = { oscillators: [fundamental, overtone], gain, startAt: at, stopAt: Number.POSITIVE_INFINITY };
+    for (const osc of voice.oscillators) osc.start(at);
+    fundamental.onended = () => {
+      this.fading.delete(voice);
+      if (this.held === voice) this.held = null;
+      voiceGain.disconnect();
+      overtoneGain.disconnect();
+    };
+    this.held = voice;
+    return true;
+  }
+
+  /** Fade a held voice out linearly from its value at `at`, then stop it. */
+  private fadeOut(voice: HeldVoice, at: number, fade: number, now: number): void {
+    if (this.held === voice) this.held = null;
+    if (voice.startAt >= at) {
+      // Not sounding yet: it never sounds.
+      for (const osc of voice.oscillators) stopQuietly(osc, voice.startAt);
+      voice.stopAt = voice.startAt;
+      this.fading.add(voice);
+      return;
+    }
+    voice.gain.hold(at, now);
+    voice.gain.linearRampToValueAtTime(0, at + fade);
+    voice.stopAt = at + fade + VOICE.minFadeSec;
+    for (const osc of voice.oscillators) stopQuietly(osc, voice.stopAt);
+    this.fading.add(voice);
+  }
+
+  breath(at: number, cycleSec: number, inhale: number, peakDb: number, troughDb: number): void {
+    const live = this.live();
+    const voice = this.held;
+    if (!live || !voice || !this.canHold(live.ctx)) return;
+    const rise = at + Math.max(VOICE.minFadeSec, inhale * cycleSec);
+    const end = Math.max(rise + VOICE.minFadeSec, at + cycleSec);
+    const from = voice.gain.hold(at, live.ctx.currentTime);
+    // Exponential ramps cannot start at zero (a breath right at a voice's start): begin at the floor.
+    if (from < TONE.floor) voice.gain.setValueAtTime(TONE.floor, at);
+    voice.gain.exponentialRampToValueAtTime(Math.max(TONE.floor, TONE.peak * dbToGain(peakDb)), rise);
+    voice.gain.exponentialRampToValueAtTime(Math.max(TONE.floor, TONE.peak * dbToGain(troughDb)), end);
+  }
+
   drones(midis: readonly number[], gainDb: number, at: number): void {
     const live = this.live();
-    if (!live || !this.canVoice(live.ctx)) return;
+    if (!live || !this.canHold(live.ctx)) return;
     const { ctx, graph } = live;
     const wanted = new Map<number, number>();
     for (const midi of midis) {
@@ -298,6 +388,20 @@ export class WebAudioEngine implements AudioEngine {
         voice.stopAt = end;
       }
     }
+    const held = this.held;
+    if (held) {
+      this.held = null;
+      this.fading.add(held);
+      if (held.startAt >= at) {
+        for (const osc of held.oscillators) stopQuietly(osc, held.startAt);
+        held.stopAt = held.startAt;
+      } else {
+        held.gain.hold(at, now);
+        held.gain.setTargetAtTime(TONE.floor, at, timeConstant);
+        for (const osc of held.oscillators) stopQuietly(osc, end);
+        held.stopAt = end;
+      }
+    }
   }
 
   fadeDrones(timeConstant: number): void {
@@ -328,7 +432,10 @@ export class WebAudioEngine implements AudioEngine {
           .then(() => (ctx as AudioContext).close())
           .catch(() => undefined)
           .then(() => {
+            // Closing the context stopped every node.
             this.voices.clear();
+            this.held = null;
+            this.fading.clear();
             this.droneVoices.clear();
           });
     return this.closing;

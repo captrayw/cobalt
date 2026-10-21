@@ -17,7 +17,8 @@ test('an app closed mid-session is scored and learned as a partial session at th
   await page.evaluate(() => window.__calm!.getState().feed!.dispose());
   await page.goto('about:blank');
 
-  await page.goto('/');
+  // The Done screen, so the launch does not also start a new session.
+  await page.goto('/#/done');
   // The checkpoint holds the 10 finished pages (the page just shown had no time yet).
   await expect(page.getByTestId('last-session')).toContainText('Last session: 10 pages');
   const after = await page.evaluate(async () => {

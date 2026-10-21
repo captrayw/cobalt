@@ -10,8 +10,9 @@ test.describe('performance budgets', () => {
   test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true });
 
   test('generation, page change and crossfade stay within budget', async ({ page, browser }, testInfo) => {
+    // The app opens straight into a session.
     await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Start session' })).toBeEnabled();
+    await expect(page.locator('main.feed')).toHaveAttribute('data-page', '1');
     const cdp = await page.context().newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
     // A Chromium performance trace of the whole run, attached to the report (open it in DevTools).
@@ -33,8 +34,10 @@ test.describe('performance budgets', () => {
       return times;
     });
 
-    await page.getByRole('button', { name: 'Start session' }).tap();
-    await expect(page.locator('main.feed')).toHaveAttribute('data-page', '1');
+    // The first touch starts the sound, so the page changes below include it.
+    await page.locator('main.feed').tap();
+    await expect(page.getByText('Swipe up for the next page', { exact: true })).toBeHidden();
+    await expect.poll(() => page.evaluate(() => window.__calm!.getState().feed!.audioState)).toBe('running');
 
     // Page change: the key handler, the reducer, the controller's effects (sound included) and
     // React's commit, which React flushes in a microtask, plus a forced style and layout pass.

@@ -1,6 +1,6 @@
 # Calm Scroll
 
-A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. A page held past its planned time starts to breathe: its note repeats once per breath, each breath a little longer, softer and more exhale-weighted. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
+A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
 
 Version 1 is an installable progressive web app (PWA): no account, no network requests, no analytics.
 
@@ -15,7 +15,14 @@ pnpm build          # production build in apps/web/dist
 pnpm preview        # serve the build at http://localhost:4173 (service worker on)
 ```
 
-To use it on a phone, serve `apps/web/dist` over HTTPS (any static host works), open it, then use **Add to Home Screen** (iOS Safari) or **Install app** (Android Chrome). After the first visit it works offline.
+## Put it on a phone
+
+The build in `apps/web/dist` is a static site. Any host that serves files over HTTPS works, and after the first visit the app runs offline.
+
+- **At the root of a host** (for example Netlify, Cloudflare Pages, or a `<user>.github.io` site): run `pnpm build` and upload the `apps/web/dist` folder. On Netlify, you can sign in at https://app.netlify.com/drop and drag the folder onto the page.
+- **In a folder of a host** (for example a GitHub Pages project site at `https://<user>.github.io/calm-scroll/`): build with that folder as the base, `BASE_PATH=/calm-scroll/ pnpm build`, so the icons, manifest and service worker point inside it.
+
+Then open the address on the phone and add it to the home screen: **Share → Add to Home Screen** in Safari on an iPhone, or **⋮ → Install app** in Chrome on Android. Memory stays with that address, so keep using the same one.
 
 ## Repository
 
@@ -42,7 +49,7 @@ pnpm verify         # all of the above, as CI runs them
 
 Install Playwright's browsers once with `pnpm --filter @calm/web exec playwright install chromium webkit`.
 
-If the project sits in a folder that OneDrive (or another sync tool) syncs, a build can occasionally fail with `EPERM` while the sync tool holds a file in `apps/web/dist`; run it again, or keep the project outside the synced folder.
+If the project sits in a folder that OneDrive (or another sync tool) syncs, a build can occasionally fail with `EPERM` while the sync tool holds a file in `apps/web/dist`; run it again, or keep the project outside the synced folder. Syncing the builds and traces that the browser tests write also takes CPU time, which can slow the WebKit tests enough to time out.
 
 ## Status
 

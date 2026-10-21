@@ -34,7 +34,7 @@ export function Summary() {
   const note = useApp((s) => s.storageNote);
 
   useEffect(() => {
-    if (!summary) navigate('home', true);
+    if (!summary) navigate('done', true);
   }, [summary]);
   if (!summary?.totals) return null;
 
@@ -66,10 +66,10 @@ export function Summary() {
       </section>
 
       <div className="btn-row">
-        <button type="button" className="btn" onClick={startSession}>
+        <button type="button" className="btn" onClick={() => startSession(true)}>
           Start next session
         </button>
-        <button type="button" className="btn" onClick={() => navigate('home')}>
+        <button type="button" className="btn" onClick={() => navigate('done')}>
           Done
         </button>
       </div>

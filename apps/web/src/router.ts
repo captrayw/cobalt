@@ -1,17 +1,18 @@
 import { useSyncExternalStore } from 'react';
 
-export type Route = 'home' | 'feed' | 'summary' | 'memory' | 'settings' | 'about' | 'dev';
+/** The feed is the default: opening the app goes straight into scrolling. */
+export type Route = 'feed' | 'summary' | 'done' | 'memory' | 'settings' | 'about' | 'dev';
 
-const ROUTES: readonly Route[] = ['home', 'feed', 'summary', 'memory', 'settings', 'about', 'dev'];
+const ROUTES: readonly Route[] = ['feed', 'summary', 'done', 'memory', 'settings', 'about', 'dev'];
 
 export function parseHash(hash: string): Route {
   const name = hash.replace(/^#\/?/, '').split(/[/?]/)[0];
-  return (ROUTES as readonly string[]).includes(name) ? (name as Route) : 'home';
+  return (ROUTES as readonly string[]).includes(name) ? (name as Route) : 'feed';
 }
 
 export function navigate(route: Route, replace = false): void {
-  const hash = route === 'home' ? '#/' : `#/${route}`;
-  if (location.hash === hash) return;
+  const hash = route === 'feed' ? '#/' : `#/${route}`;
+  if (location.hash === hash || (route === 'feed' && location.hash === '')) return;
   if (replace) location.replace(hash);
   else location.hash = hash;
 }

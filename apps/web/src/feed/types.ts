@@ -51,7 +51,10 @@ export interface FeedState {
 }
 
 export type FeedEvent =
-  | { type: 'start'; at: number }
+  /** gesture: started by a tap or key press, so audio can unlock now; otherwise at the first touch. */
+  | { type: 'start'; at: number; gesture: boolean }
+  /** The rest of the session re-sliced for the person's pace, from the page at `index` on. */
+  | { type: 'replan'; at: number; index: number; session: Session }
   | { type: 'timer'; kind: FeedTimer['kind']; at: number }
   | { type: 'next'; at: number }
   /** gesture: a tap or key press, which may resume audio. */
@@ -65,12 +68,16 @@ export type FeedEvent =
 export type FeedEffect =
   | { type: 'unlockAudio' }
   | { type: 'resumeAudio' }
-  | { type: 'tone'; hz: number; dur: number; gainDb: number; inhale: number }
+  /** The page's held voice, crossfading from the previous one over `fade` seconds. */
+  | { type: 'voice'; hz: number; gainDb: number; fade: number }
+  /** One breath on the held voice: a swell to peakDb, then down to troughDb, over `cycle` seconds. */
+  | { type: 'breath'; cycle: number; inhale: number; peakDb: number; troughDb: number }
   | { type: 'drones'; midis: number[]; gainDb: number }
-  | { type: 'releaseVoices' }
   | { type: 'master'; target: number; tc: number }
   /** Save an in-progress copy; `current` also records the page on screen so far. */
   | { type: 'checkpoint'; current: boolean }
+  /** See whether the rest of the session should be re-sliced for the person's pace. */
+  | { type: 'checkPace' }
   | { type: 'finish' };
 
 export interface FeedStep {

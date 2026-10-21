@@ -9,3 +9,4 @@ export * from './linger.ts';
 export * from './loop.ts';
 export * from './session.ts';
 export * from './simulate.ts';
+export * from './pace.ts';

@@ -60,10 +60,12 @@ export const SCHEDULE = {
 } as const;
 export const MASTER_TC = { page: 0.2, rest: 8, wake: 0.5, end: 0.08, previewStop: 0.06 } as const;
 /**
- * Addition to the brief: on a page change, tones still sounding from the previous page fade with
- * this time constant, so quick swipes never stack voices above the first page's level.
+ * Owner change (Oct 2026): each page has one sustained voice that holds until the person moves on,
+ * then crossfades into the next page's voice over the page's crossfade time. Lingering breathes as
+ * a swell on that voice, between its breath level and breathDepthDb below it, never to silence.
+ * A voice started late (audio unlocked by the first touch) fades in over resumeFadeSec.
  */
-export const VOICE_RELEASE_TC = 0.25;
+export const VOICE = { minFadeSec: 0.05, resumeFadeSec: 1, breathDepthDb: 10 } as const;
 /** Time constant for user volume changes, so a volume change is never abrupt. */
 export const VOLUME_TC = 0.05;
 /** A fading voice or drone stops after this many time constants (about -70 dB). */
@@ -104,6 +106,13 @@ export const INPUT = {
 } as const;
 /** Safety floor: every page is planned for at least this long in any mode. */
 export const MIN_PAGE_SEC = 2;
+/**
+ * Owner change (Oct 2026): every `checkEvery` pages, if the remaining pages would run out before
+ * 15 minutes at the person's average pace so far, the rest of the session is sliced into more,
+ * shorter pages (never under MIN_PAGE_SEC). A plan that already covers `enoughShare` of the time
+ * left is kept, and a session with fewer than `minPagesLeft` pages left is not re-sliced.
+ */
+export const PACE_SLICING = { checkEvery: 10, enoughShare: 0.95, minPagesLeft: 3 } as const;
 export const CHECKPOINT_EVERY = 10;
 /**
  * Feed details the brief leaves open: how long the faint End and Next controls stay bright after a

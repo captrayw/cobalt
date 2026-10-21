@@ -7,8 +7,9 @@ import {
   lingerLevelDb,
   MASTER,
   MASTER_TC,
+  PACE_SLICING,
   REST,
-  TONE,
+  VOICE,
   type DwellRecord,
   type LingerMode,
   type Session,
@@ -77,10 +78,10 @@ function closeSpan(s: FeedState, at: number): FeedState {
 
 function showPage(s: FeedState, index: number, at: number, effects: FeedEffect[]): FeedStep {
   const page = s.session.items[index];
-  if (index > 0) effects.push({ type: 'releaseVoices' });
+  // The page's voice holds until the person moves on, crossfading in step with the color.
   effects.push(
     { type: 'master', target: MASTER.normal, tc: MASTER_TC.page },
-    { type: 'tone', hz: page.hz, dur: page.dwell, gainDb: page.gainDb, inhale: TONE.pageInhale },
+    { type: 'voice', hz: page.hz, gainDb: page.gainDb, fade: page.xfade },
     { type: 'drones', midis: page.drone, gainDb: page.gainDb },
   );
   return step(
@@ -102,10 +103,18 @@ function showPage(s: FeedState, index: number, at: number, effects: FeedEffect[]
   );
 }
 
+/** The held voice's level during breath k: each breath 1 dB softer, as in the brief. */
+export const breathLevelDb = (s: FeedState): number => {
+  const page = s.session.items[s.index];
+  return s.breath > 0 ? lingerLevelDb(page.gainDb, s.breath) : page.gainDb;
+};
+
 function playBreath(s: FeedState, k: number, at: number, effects: FeedEffect[] = []): FeedStep {
   const page = s.session.items[s.index];
   const cycle = lingerCycle(page.dwell, k, s.mode);
-  effects.push({ type: 'tone', hz: page.hz, dur: cycle, gainDb: lingerLevelDb(page.gainDb, k), inhale: inhaleShare(k, s.mode) });
+  const peakDb = lingerLevelDb(page.gainDb, k);
+  // The note keeps sounding: each breath swells to its level and settles below it, never to silence.
+  effects.push({ type: 'breath', cycle, inhale: inhaleShare(k, s.mode), peakDb, troughDb: peakDb - VOICE.breathDepthDb });
   return step(
     {
       ...s,
@@ -130,7 +139,17 @@ function advance(s: FeedState, at: number, effects: FeedEffect[]): FeedStep {
   const records = [...s.records, currentRecord(s, at)];
   // The page just shown has no time yet, so this checkpoint holds only the finished pages.
   if (records.length % CHECKPOINT_EVERY === 0) effects.push({ type: 'checkpoint', current: false });
+  if (records.length % PACE_SLICING.checkEvery === 0) effects.push({ type: 'checkPace' });
   return showPage({ ...s, records, lastAdvance: at }, s.index + 1, at, effects);
+}
+
+/** Accept a re-sliced session only if the person is still on the page it was sliced from. */
+function onReplan(s: FeedState, index: number, session: Session): FeedStep {
+  if (!isActive(s) || index !== s.index) return step(s);
+  const shown = s.session.items[s.index],
+    kept = session.items[index];
+  if (!kept || kept.start !== shown.start || kept.hex !== shown.hex || kept.midi !== shown.midi) return step(s);
+  return step({ ...s, session });
 }
 
 function onNext(s: FeedState, at: number): FeedStep {
@@ -228,7 +247,9 @@ export function reduce(s: FeedState, e: FeedEvent): FeedStep {
   switch (e.type) {
     case 'start':
       if (s.status !== 'idle') return step(s);
-      return showPage({ ...s, startedAt: e.at }, 0, e.at, [{ type: 'unlockAudio' }]);
+      return showPage({ ...s, startedAt: e.at }, 0, e.at, e.gesture ? [{ type: 'unlockAudio' }] : []);
+    case 'replan':
+      return onReplan(s, e.index, e.session);
     case 'timer':
       return onTimer(s, e.kind, e.at);
     case 'next':

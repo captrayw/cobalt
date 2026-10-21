@@ -10,6 +10,12 @@ export class NullAudioEngine implements AudioEngine {
 
   tone(): void {}
 
+  voice(): boolean {
+    return false;
+  }
+
+  breath(): void {}
+
   drones(): void {}
 
   setMaster(): void {}

@@ -18,9 +18,10 @@ test.describe('installable, offline and private', () => {
 
     await context.setOffline(true);
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Calm Scroll' })).toBeVisible();
-    await page.getByRole('button', { name: 'Start session' }).click();
+    // Offline, the app still opens straight into a session.
     await expect(page.locator('main.feed')).toHaveAttribute('data-page', '1');
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('main.feed')).toHaveAttribute('data-page', '2');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'Session ended' })).toBeVisible();
   });
@@ -32,9 +33,10 @@ test.describe('installable, offline and private', () => {
       if (url.origin !== 'http://localhost:4173' && !url.protocol.startsWith('data') && !url.protocol.startsWith('blob')) foreign.push(request.url());
     });
     await page.goto('/');
-    await page.getByRole('button', { name: 'Start session' }).click();
+    await expect(page.locator('main.feed')).toHaveAttribute('data-page', '1');
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'Session ended' })).toBeVisible();
     for (const route of ['/#/memory', '/#/settings', '/#/about', '/#/dev']) {
       await page.goto(route);
       await expect(page.locator('h1')).toBeVisible();

@@ -1,19 +1,9 @@
-import { baseL, CHROMA, FAMILY_BY_ID, fitChroma, GROUPS, oklchToHex, type LingerMode, type PaceId } from '@calm/core';
+import { baseL, CHROMA, FAMILY_BY_ID, fitChroma, GROUPS, oklchToHex } from '@calm/core';
 import { useEffect, useRef } from 'react';
 import { navigate } from '../router';
-import { startSession, updateSettings, useApp } from '../store';
+import { startSession, useApp } from '../store';
 import type { SessionDoc } from '../storage/types';
-import { formatMinutes, Segmented, Switch } from '../ui';
-
-const PACES = [
-  { value: 'standard', label: '5–10 s per page' },
-  { value: 'measured', label: '12–24 s per page' },
-] as const satisfies readonly { value: PaceId; label: string }[];
-
-const RHYTHMS = [
-  { value: 'gradual', label: 'Gradual' },
-  { value: 'user', label: '2, 5, 9 s' },
-] as const satisfies readonly { value: LingerMode; label: string }[];
+import { formatMinutes } from '../ui';
 
 /** One color per group at its center: the group's main family, lightness and chroma. */
 const ARC = GROUPS.map((g) => {
@@ -26,18 +16,21 @@ const ARC = GROUPS.map((g) => {
 });
 
 function lastLine(last: SessionDoc | null): string {
-  if (!last?.totals) return 'Your first session starts fresh.';
+  if (!last?.totals) return 'No session has finished on this device yet.';
   const { watched, lingers, sleeps, seconds } = last.totals;
   const parts = [`${watched} ${watched === 1 ? 'page' : 'pages'} over ${formatMinutes(seconds)}`];
   parts.push(lingers === 0 ? 'no lingers' : `${lingers} ${lingers === 1 ? 'linger' : 'lingers'}`);
   return `Last session: ${parts.join(', ')}${sleeps > 0 ? ', and possible sleep' : ''}.`;
 }
 
-export function Home() {
+/**
+ * Where a person lands after choosing Done on the summary: a quiet stopping point. Opening the app
+ * again goes straight back into scrolling.
+ */
+export function Done() {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus({ preventScroll: true }), []);
   const ready = useApp((s) => s.ready);
-  const settings = useApp((s) => s.settings);
   const last = useApp((s) => s.lastSession);
   const remembered = useApp((s) => Object.keys(s.memory.pages).length);
   const note = useApp((s) => s.storageNote);
@@ -47,9 +40,12 @@ export function Home() {
       <div className="column">
         <header className="screen-head">
           <h1 ref={heading} tabIndex={-1}>
-            Calm Scroll
+            Done for now
           </h1>
-          <p className="muted">Fifteen minutes of soft color and sound. Stay on a page and it slows into a breathing rhythm.</p>
+          <p className="muted" data-testid="last-session">
+            {lastLine(last)}
+          </p>
+          {note && <p className="notice">{note}</p>}
         </header>
 
         <div className="arc" role="img" aria-label="The arc: warm colors and higher notes at the start, cool and lower at the end.">
@@ -61,33 +57,9 @@ export function Home() {
           ))}
         </div>
 
-        <div className="stack">
-          <button type="button" className="btn btn-primary btn-block" onClick={startSession} disabled={!ready}>
-            Start session
-          </button>
-          <p className="muted small" data-testid="last-session">
-            {lastLine(last)}
-          </p>
-          {note && <p className="notice">{note}</p>}
-        </div>
-
-        <section className="panel" aria-label="Session options">
-          <Segmented legend="Pace" value={settings.pace} choices={PACES} onChange={(pace) => void updateSettings({ pace })} />
-          <Segmented
-            legend="Linger rhythm"
-            value={settings.lingerMode}
-            choices={RHYTHMS}
-            onChange={(lingerMode) => void updateSettings({ lingerMode })}
-            hint={settings.lingerMode === 'gradual' ? 'Each breath stretches a little, toward six breaths a minute.' : 'Breaths of 2, 5 and then 9 seconds, kept for comparison.'}
-          />
-          <hr className="divider" />
-          <Switch
-            label="Use what I lingered on"
-            hint="Brings back pages you stayed on, and gently favors their colors and notes."
-            checked={settings.useMemory}
-            onChange={(useMemory) => void updateSettings({ useMemory })}
-          />
-        </section>
+        <button type="button" className="btn btn-primary btn-block" onClick={() => startSession(true)} disabled={!ready}>
+          Start a session
+        </button>
 
         <nav className="nav-list" aria-label="More">
           <button type="button" className="nav-item" onClick={() => navigate('memory')}>

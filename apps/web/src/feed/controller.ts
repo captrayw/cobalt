@@ -1,9 +1,24 @@
 import type { AudioEngine, EngineState } from '@calm/audio';
-import { FADE_TCS, FEED_UI, MASTER_TC, SCHEDULE, VOICE_RELEASE_TC, type DwellRecord, type LingerMode, type Page, type PaceId, type Session } from '@calm/core';
+import {
+  FADE_TCS,
+  FEED_UI,
+  MASTER,
+  MASTER_TC,
+  PACE_PRESETS,
+  SCHEDULE,
+  sliceForPace,
+  VOICE,
+  type DwellRecord,
+  type LingerMode,
+  type Memory,
+  type Page,
+  type PaceId,
+  type Session,
+} from '@calm/core';
 import { watchPageHide, watchVisibility } from '../platform/visibility';
 import { WakeLockManager } from '../platform/wakeLock';
 import type { SessionDoc, SessionRecordDoc, SessionStatus } from '../storage/types';
-import { createFeedState, currentRecord, dimFor, isActive, reduce } from './reducer';
+import { breathLevelDb, createFeedState, currentRecord, dimFor, isActive, reduce } from './reducer';
 import type { FeedEffect, FeedEvent, FeedState, FeedStatus, FeedTimer } from './types';
 
 /** What the feed screen draws. Listeners are only told when one of these changes. */
@@ -24,6 +39,8 @@ export interface FeedSetup {
   mode: LingerMode;
   pace: PaceId;
   useMemory: boolean;
+  /** Memory as it was when the session started (null with the switch off), for pace slicing. */
+  memory: Memory | null;
 }
 
 export interface FeedHooks {
@@ -55,9 +72,9 @@ const toRecordDoc = (r: DwellRecord): SessionRecordDoc => ({
 });
 
 const sameView = (a: FeedView, b: FeedView): boolean =>
-  a.status === b.status && a.index === b.index && a.breath === b.breath && a.dim === b.dim && a.t0 === b.t0;
+  a.status === b.status && a.index === b.index && a.total === b.total && a.breath === b.breath && a.dim === b.dim && a.t0 === b.t0;
 
-/** Runs the reducer's effects: sound, the single timer, the wake lock and checkpoints. */
+/** Runs the reducer's effects: sound, the single timer, the wake lock, checkpoints and pace slicing. */
 export class FeedController {
   private s: FeedState;
   private view: FeedView;
@@ -73,8 +90,12 @@ export class FeedController {
   private audioRan = false;
   /** An unlock or resume is in flight. */
   private resuming = false;
+  /** Index of the page whose voice is sounding, or -1. */
+  private voiced = -1;
   /** Suspends the context once a rest has faded out. */
   private restSleep: ReturnType<typeof setTimeout> | null = null;
+  /** Cancels a pending pace check. */
+  private paceTask: (() => void) | null = null;
   private wallStart = 0;
   private detachers: (() => void)[] = [];
 
@@ -95,6 +116,11 @@ export class FeedController {
     return this.s;
   }
 
+  /** The audio engine's state: idle until the first touch creates the context. */
+  get audioState(): EngineState {
+    return this.engine.state;
+  }
+
   getView = (): FeedView => this.view;
 
   subscribe = (listener: () => void): (() => void) => {
@@ -102,10 +128,13 @@ export class FeedController {
     return () => this.listeners.delete(listener);
   };
 
-  /** Call inside the tap or key press that starts the session, so audio can unlock. */
-  start(): void {
+  /**
+   * Start showing pages. Inside a tap or key press (`gesture`), audio unlocks at once; otherwise
+   * (opening the app) the colors start now and the sound with the first touch, swipe or key.
+   */
+  start(gesture = true): void {
     this.wallStart = this.wallNow();
-    this.dispatch({ type: 'start', at: this.now() });
+    this.dispatch({ type: 'start', at: this.now(), gesture });
   }
 
   setVolume(db: number): void {
@@ -120,6 +149,18 @@ export class FeedController {
   activity = (gesture: boolean): void => {
     if (gesture) this.resumeIfStopped();
     this.dispatch({ type: 'activity', at: this.now(), gesture });
+  };
+  /**
+   * Another chance to start audio, from a touchend or click on the feed. Swipes and taps are read on
+   * pointerup, but iOS may only count touchend or click as the gesture that lets sound start, so a
+   * try still in flight from pointerup is asked again here. That first try still settles the outcome.
+   */
+  unlock = (): void => {
+    if (!isActive(this.s)) return;
+    const audio: EngineState = this.engine.state;
+    if (audio !== 'idle' && audio !== 'suspended' && audio !== 'interrupted') return;
+    if (this.resuming) void this.engine.unlock();
+    else this.unlockAudio();
   };
 
   dispatch(event: FeedEvent): void {
@@ -160,15 +201,30 @@ export class FeedController {
     const settled = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), FEED_UI.resumeTimeoutMs));
     void Promise.race([this.engine.unlock(), settled]).then((running) => {
       this.resuming = false;
-      if (running || this.engine.state === 'running') this.audioRan = true;
+      if (running || this.engine.state === 'running') this.onAudioRunning();
       else this.checkAudio();
     });
   }
 
-  /** A tap, key or swipe is a chance to bring back audio that stopped (a call, a locked screen). */
+  /**
+   * Audio is running. If the page's voice could not start while audio was off (before the first
+   * touch, or a page changed while audio was stopped), bring it in now, with its drones.
+   */
+  private onAudioRunning(): void {
+    this.audioRan = true;
+    const s = this.s;
+    if ((s.status !== 'showing' && s.status !== 'lingering') || s.muted || this.voiced === s.index) return;
+    const page = s.session.items[s.index];
+    const at = this.engine.now() + SCHEDULE.offset;
+    this.engine.setMaster(MASTER.normal, MASTER_TC.wake);
+    if (this.engine.voice(page.hz, breathLevelDb(s), at, VOICE.resumeFadeSec)) this.voiced = s.index;
+    this.engine.drones(page.drone, page.gainDb, at);
+  }
+
+  /** A tap, key or swipe is the chance to start audio, or to bring back audio that stopped. */
   private resumeIfStopped(): void {
     const audio: EngineState = this.engine.state;
-    if (this.audioRan && (audio === 'suspended' || audio === 'interrupted')) this.unlockAudio();
+    if (audio === 'idle' || audio === 'suspended' || audio === 'interrupted') this.unlockAudio();
   }
 
   /** While resting, suspend the context once the master has faded out, to save battery. */
@@ -182,6 +238,38 @@ export class FeedController {
     }, FADE_TCS * MASTER_TC.rest * 1000);
   }
 
+  /** Check the pace when the page change is done and the browser is idle, so it never slows a swipe. */
+  private schedulePaceCheck(): void {
+    if (this.paceTask) return;
+    const run = () => {
+      this.paceTask = null;
+      this.checkPace();
+    };
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(run, { timeout: 1500 });
+      this.paceTask = () => cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(run, 0);
+      this.paceTask = () => clearTimeout(id);
+    }
+  }
+
+  /**
+   * If the pages left would run out before 15 minutes at the person's average pace so far, slice the
+   * rest of the session into more, shorter pages, from the page on screen on.
+   */
+  private checkPace(): void {
+    const s = this.s;
+    if (s.status !== 'showing' && s.status !== 'lingering') return;
+    const elapsedSec = s.records.reduce((sum, r) => sum + r.dwell, 0);
+    const sliced = sliceForPace(
+      s.session,
+      { index: s.index, elapsedSec, watched: s.records.length },
+      { memory: this.setup.memory, useMemory: this.setup.useMemory },
+    );
+    if (sliced) this.dispatch({ type: 'replan', at: this.now(), index: s.index, session: sliced });
+  }
+
   /** Watch page visibility, pagehide and the audio context. Returns a function that stops watching. */
   attach(): () => void {
     const offVisibility = watchVisibility((hidden) => this.dispatch({ type: hidden ? 'hidden' : 'visible', at: this.now() }));
@@ -191,7 +279,7 @@ export class FeedController {
       this.dispatch({ type: 'end', at: this.now() });
     });
     const offAudio = this.engine.onStateChange((state: EngineState) => {
-      if (state === 'running') this.audioRan = true;
+      if (state === 'running') this.onAudioRunning();
       else this.checkAudio();
     });
     this.detachers = [offVisibility, offPageHide, offAudio];
@@ -208,8 +296,10 @@ export class FeedController {
     this.detach();
     if (this.timer !== null) clearTimeout(this.timer);
     if (this.restSleep !== null) clearTimeout(this.restSleep);
+    this.paceTask?.();
     this.timer = null;
     this.restSleep = null;
+    this.paceTask = null;
     this.wake.set(false);
   }
 
@@ -223,19 +313,19 @@ export class FeedController {
     const now = this.now();
     const records = [...s.records];
     if (current && isActive(s)) records.push(currentRecord(s, now));
-    const { session } = this.setup;
+    const pace = PACE_PRESETS[this.setup.pace];
     const end = s.endedAt ?? (status === 'open' ? now : null);
     return {
       v: 1,
       id: this.setup.id,
-      seed: session.seed,
+      seed: s.session.seed,
       pace: this.setup.pace,
-      minDwell: session.opts.minDwell,
-      maxDwell: session.opts.maxDwell,
+      minDwell: pace.minDwell,
+      maxDwell: pace.maxDwell,
       lingerMode: this.setup.mode,
       useMemory: this.setup.useMemory,
-      inserted: session.inserted,
-      pages: session.items.length,
+      inserted: s.session.inserted,
+      pages: s.session.items.length,
       startedAt: this.wallStart,
       endedAt: end === null ? null : Math.round(this.wallStart + (end - s.startedAt)),
       status,
@@ -281,14 +371,14 @@ export class FeedController {
         case 'resumeAudio':
           this.unlockAudio();
           break;
-        case 'tone':
-          this.engine.tone(fx.hz, at(), fx.dur, fx.gainDb, fx.inhale);
+        case 'voice':
+          this.voiced = this.engine.voice(fx.hz, fx.gainDb, at(), fx.fade) ? this.s.index : -1;
+          break;
+        case 'breath':
+          this.engine.breath(at(), fx.cycle, fx.inhale, fx.peakDb, fx.troughDb);
           break;
         case 'drones':
           this.engine.drones(fx.midis, fx.gainDb, at());
-          break;
-        case 'releaseVoices':
-          this.engine.releaseVoices(VOICE_RELEASE_TC);
           break;
         case 'master':
           this.engine.setMaster(fx.target, fx.tc);
@@ -296,9 +386,14 @@ export class FeedController {
         case 'checkpoint':
           this.hooks.checkpoint(this.buildDoc('open', fx.current));
           break;
+        case 'checkPace':
+          this.schedulePaceCheck();
+          break;
         case 'finish':
           this.detach();
           this.wake.set(false);
+          this.paceTask?.();
+          this.paceTask = null;
           void this.engine.close(MASTER_TC.end);
           this.hooks.finish(this.buildDoc('done'));
           break;

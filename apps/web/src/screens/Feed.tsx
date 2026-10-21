@@ -1,5 +1,5 @@
 import { FEED_UI } from '@calm/core';
-import { memo, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useReducedMotion } from '../appearance';
 import type { FeedController } from '../feed/controller';
 import { ColorCrossfade } from '../feed/crossfade';
@@ -9,7 +9,7 @@ import { useApp } from '../store';
 const FEED_LABEL = 'Calm feed. Swipe up or press the down arrow for the next page.';
 
 /** Wire keys, wheel and pointer input on the feed surface to the controller. */
-function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElement | null>, wake: () => void) {
+function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElement | null>, wake: (input: boolean) => void) {
   useEffect(() => {
     const el = surface.current;
     if (!el) return;
@@ -20,7 +20,7 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
     const onKey = (e: KeyboardEvent) => {
       const action = classifyKey(e.key, e.target);
       if (action === 'ignore') return;
-      wake();
+      wake(true);
       if (action === 'next') {
         e.preventDefault();
         feed.next();
@@ -32,7 +32,7 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
     const onWheel = (e: WheelEvent) => {
       const [state, action] = wheelAction(wheel, performance.now(), e.deltaY, e.deltaMode);
       wheel = state;
-      wake();
+      wake(true);
       if (action === 'next') feed.next();
       else feed.activity(false);
     };
@@ -44,7 +44,7 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
       const action = pointerAction(e.clientX - press.x, e.clientY - press.y);
       const onButton = press.onButton;
       press = null;
-      wake();
+      wake(true);
       // A swipe counts wherever it starts; a tap on End or Next belongs to that button's click.
       if (action === 'next') feed.next();
       else if (!onButton) feed.activity(action === 'tap');
@@ -53,12 +53,15 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
       const now = performance.now();
       if (now - lastMove < FEED_UI.moveActivityEveryMs) return;
       lastMove = now;
-      wake();
+      // A pointer passing over (or a browser's synthetic move after the page changes) is not a touch.
+      wake(false);
       feed.activity(false);
     };
     const onCancel = () => {
       press = null;
     };
+    // The same touch again, as the events iOS counts as a gesture for starting sound.
+    const onGesture = () => feed.unlock();
 
     window.addEventListener('keydown', onKey);
     el.addEventListener('wheel', onWheel, { passive: true });
@@ -66,6 +69,8 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointercancel', onCancel);
+    el.addEventListener('touchend', onGesture, { passive: true });
+    el.addEventListener('click', onGesture);
     return () => {
       window.removeEventListener('keydown', onKey);
       el.removeEventListener('wheel', onWheel);
@@ -73,6 +78,8 @@ function useFeedInputs(feed: FeedController, surface: React.RefObject<HTMLElemen
       el.removeEventListener('pointerup', onUp);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointercancel', onCancel);
+      el.removeEventListener('touchend', onGesture);
+      el.removeEventListener('click', onGesture);
     };
   }, [feed, surface, wake]);
 }
@@ -102,10 +109,13 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   const surface = useRef<HTMLElement>(null);
   const crossfade = useRef<ColorCrossfade | null>(null);
   const awakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Until the first touch, a quiet hint says how to move on (sound also starts with that touch).
+  const [touched, setTouched] = useState(false);
+  const touchedRef = useRef(false);
 
   // Brighten the faint controls for a moment after any touch. A DOM attribute, not React state,
-  // so input never costs a render.
-  const wake = useCallback(() => {
+  // so input never costs a render. A key, wheel, tap or swipe (`input`) also hides the hint.
+  const wake = useCallback((input: boolean) => {
     const el = surface.current;
     if (!el) return;
     el.dataset.awake = 'true';
@@ -113,6 +123,10 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
     awakeTimer.current = setTimeout(() => {
       el.dataset.awake = 'false';
     }, FEED_UI.controlsAwakeMs);
+    if (input && !touchedRef.current) {
+      touchedRef.current = true;
+      setTouched(true);
+    }
   }, []);
 
   useFeedInputs(feed, surface, wake);
@@ -166,6 +180,10 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
       )}
 
       {!reduced && showing && <div className="feed-progress" key={view.t0} style={{ animationDuration: `${page.dwell}s` }} />}
+
+      {!touched && view.index === 0 && view.status !== 'resting' && view.status !== 'paused' && (
+        <p className="feed-hint">Swipe up for the next page</p>
+      )}
 
       <FeedControls feed={feed} />
 

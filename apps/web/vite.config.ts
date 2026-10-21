@@ -28,7 +28,15 @@ function contentSecurityPolicy(): Plugin {
   };
 }
 
+/**
+ * Where the app is served from: '/' at the root of a host, or a folder such as '/calm-scroll/' for a
+ * GitHub Pages project site (BASE_PATH=/calm-scroll/ pnpm build). Routes live in the hash, so any
+ * folder works.
+ */
+const base = `/${(process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, '')}/`.replace('//', '/');
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     contentSecurityPolicy(),
@@ -40,13 +48,13 @@ export default defineConfig({
       // The glob below already precaches every public file, icons included.
       includeManifestIcons: false,
       manifest: {
-        id: '/',
+        id: base,
         name: 'Calm Scroll',
         short_name: 'Calm Scroll',
         description: 'Fifteen minutes of soft color and sound that slows into a breathing rhythm.',
         lang: 'en',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#090C12',
@@ -54,9 +62,9 @@ export default defineConfig({
         // A relaxation aid: no health category, so no store listing implies a medical purpose.
         categories: ['lifestyle'],
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: `${base}icons/icon-192.png`, sizes: '192x192', type: 'image/png' },
+          { src: `${base}icons/icon-512.png`, sizes: '512x512', type: 'image/png' },
+          { src: `${base}icons/icon-maskable-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

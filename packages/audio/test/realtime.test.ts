@@ -63,4 +63,41 @@ describe('WebAudioEngine with a live AudioContext', () => {
     await engine.close(0.06, 0.05);
     button.remove();
   });
+
+  it('holds a page voice only while the context runs, and it sounds after resuming in a click', async () => {
+    const engine = new WebAudioEngine();
+    const button = document.createElement('button');
+    let unlocked: Promise<boolean> = Promise.resolve(false);
+    button.addEventListener('click', () => (unlocked = engine.unlock()));
+    document.body.append(button);
+    await userEvent.click(button);
+    expect(await unlocked).toBe(true);
+
+    const ctx = engine.context as AudioContext;
+    const created = vi.spyOn(ctx, 'createOscillator');
+    await engine.sleep();
+    expect(engine.state).toBe('suspended');
+    expect(engine.voice(440, -6, engine.now() + 0.03, 0.2)).toBe(false);
+    engine.breath(engine.now() + 0.03, 4, 0.4, -6, -16);
+    expect(created).not.toHaveBeenCalled();
+    expect(engine.heldVoices).toBe(0);
+
+    await userEvent.click(button);
+    expect(await unlocked).toBe(true);
+    // Listen at the end of the graph to hear the voice.
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 2048;
+    engine.nodes!.filter.connect(analyser);
+    expect(engine.voice(440, -6, engine.now() + 0.03, 0.2)).toBe(true);
+    expect(created).toHaveBeenCalledTimes(2);
+    expect(engine.heldVoices).toBe(1);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const samples = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(samples);
+    const heard = samples.reduce((peak, v) => Math.max(peak, Math.abs(v)), 0);
+    console.log(`[audio] live held voice peak: ${heard}`);
+    expect(heard).toBeGreaterThan(0.01);
+    await engine.close(0.06, 0.05);
+    button.remove();
+  });
 });

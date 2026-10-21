@@ -144,10 +144,14 @@ describe('generator', () => {
     expect(s.inserted).toBe(0);
   });
 
-  it('refuses a pace that could plan a page under 2 s', () => {
-    expect(() => generate({ seed: 1, minDwell: 3.9, maxDwell: 10 })).toThrow(RangeError);
+  it('refuses a pace that could plan a page under 2 s, and never plans one', () => {
+    expect(() => generate({ seed: 1, minDwell: 1.9, maxDwell: 10 })).toThrow(RangeError);
     expect(() => generate({ seed: 1, minDwell: 8, maxDwell: 6 })).toThrow(RangeError);
-    expect(() => generate({ seed: 1, minDwell: 4, maxDwell: 8 })).not.toThrow();
+    for (const seed of seeds(200, 31)) {
+      // Even the absorbing last page stays at 2 s or more.
+      const items = generate({ seed, minDwell: 2, maxDwell: 2.6 });
+      expect(Math.min(...items.map((p) => p.dwell))).toBeGreaterThanOrEqual(2);
+    }
   });
 
   it('wraps seed + 1 around 2^32', () => {

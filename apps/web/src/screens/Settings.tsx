@@ -46,6 +46,14 @@ export function SettingsScreen() {
           onChange={(lingerMode) => void updateSettings({ lingerMode })}
           hint="Gradual starts at the page's own pace and stretches each breath about 6%. The 2, 5, 9 s rhythm is kept for comparison."
         />
+        <hr className="divider" />
+        <Switch
+          label="Use what I lingered on"
+          hint="Brings back pages you stayed on, and gently favors their colors and notes."
+          checked={s.useMemory}
+          onChange={(useMemory) => void updateSettings({ useMemory })}
+        />
+        <p className="hint">Changes apply from the next session.</p>
       </section>
 
       <section className="panel" aria-label="Sound">

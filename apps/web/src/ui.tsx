@@ -22,11 +22,11 @@ export function Screen({ title, intro, back = true, children }: { title: string;
       <div className="column">
         <header className="screen-head">
           {back && (
-            <button type="button" className="back" onClick={() => navigate('home')}>
+            <button type="button" className="back" onClick={() => navigate('done')}>
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Home
+              Back
             </button>
           )}
           <h1 ref={heading} tabIndex={-1}>

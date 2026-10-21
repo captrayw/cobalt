@@ -16,6 +16,26 @@
   cursor: default;
 }
 
+/* Before the first page color: the app background, for the moment storage takes to open. */
+.feed-waiting {
+  background: var(--bg);
+}
+
+.feed-hint {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 62px);
+  margin: 0;
+  text-align: center;
+  font: 500 12px/1.4 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--page-ink);
+  pointer-events: none;
+  animation: fade-in 180ms ease-out;
+}
+
 .feed-dim {
   position: absolute;
   inset: 0;

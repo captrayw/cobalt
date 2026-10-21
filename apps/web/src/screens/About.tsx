@@ -12,10 +12,20 @@ export function About() {
       <section className="prose">
         <h2>What it is</h2>
         <p>
-          Calm Scroll plays a fifteen-minute feed of full-screen colors, each with one soft note. You move on whenever you like, as in a short-video
-          feed. It is a relaxation aid. It does not diagnose, treat or cure anything.
+          Calm Scroll plays a fifteen-minute feed of full-screen colors, each with one soft note. It opens straight into the feed, and you move on
+          whenever you like, as in a short-video feed. Browsers only allow sound after a first touch, so the sound starts with your first swipe or
+          tap. It is a relaxation aid. It does not diagnose, treat or cure anything.
         </p>
         <p>No study has tested this exact mix of color, sound and feed, so treat it as a gentle experiment.</p>
+      </section>
+
+      <section className="prose">
+        <h2>Your pace</h2>
+        <p>
+          A session is planned as about 120 pages. If you move faster than that, the rest of the session is cut into more, shorter pages every
+          ten pages, so that at your pace it still lasts about fifteen minutes. No page is ever shorter than two seconds, so at a very quick pace
+          a session can end a little early.
+        </p>
       </section>
 
       <section className="prose">
@@ -50,10 +60,14 @@ export function About() {
       </section>
 
       <section className="prose">
-        <h2>The linger rhythm</h2>
+        <h2>The voice and the linger rhythm</h2>
         <p>
-          Stay on a page past its planned time and it starts to breathe. Its note repeats once per breath, each breath a little longer, softer
-          and weighted toward the exhale, and the screen dims slightly.
+          Each page's note holds steadily for as long as you stay. When you move on, it flows into the next page's note over the same second or
+          so that the colors take to blend.
+        </p>
+        <p>
+          Stay on a page past its planned time and it starts to breathe. The note swells and settles once per breath without ever fading away,
+          each breath a little longer, softer and weighted toward the exhale, and the screen dims slightly.
         </p>
         <p>
           The gradual rhythm starts at the page's own pace and stretches each breath about 6%, toward six and then five breaths a minute. Slow
@@ -85,7 +99,7 @@ export function About() {
         <p>
           The next session may bring a remembered page back by chance, inside its original group and never more than a quarter of a group, so
           most of each session stays new.
-          <Refs n={[2, 34, 35]} /> Scores fade 15% each session. You can turn this off on the Home screen.
+          <Refs n={[2, 34, 35]} /> Scores fade 15% each session. You can turn this off in Settings.
         </p>
       </section>
 

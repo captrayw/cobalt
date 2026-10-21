@@ -64,27 +64,55 @@ function nearestNote(pool: readonly number[], prev: number): number {
   return best;
 }
 
+/** Where drawing picks up: the planned time, the two pages before it, and the next page's number. */
+export interface Cursor {
+  t: number;
+  prev: Page | null;
+  /** The page before prev. */
+  prevPrev: Page | null;
+  /** 1-based number of the next page. */
+  i: number;
+}
+
+export const SESSION_START: Cursor = { t: 0, prev: null, prevPrev: null, i: 1 };
+
+function checkDwell(minDwell: number, maxDwell: number): void {
+  if (!(minDwell >= MIN_PAGE_SEC && maxDwell >= minDwell)) {
+    throw new RangeError(`Pages must be planned for at least ${MIN_PAGE_SEC} s: minDwell ${minDwell}, maxDwell ${maxDwell}.`);
+  }
+}
+
 /**
  * One draw of a session. Random draws per page, in this order: dwell, hue family, hue 1, hue 2,
  * lightness jitter, chroma jitter, note. Golden-file tests depend on that order.
  */
 export function generate(opts: GenerateOptions): Page[] {
-  const { minDwell, maxDwell, bias } = opts;
-  // The shortest possible page is the last one, at half of minDwell; it may never go under 2 s.
-  if (!(minDwell / 2 >= MIN_PAGE_SEC && maxDwell >= minDwell)) {
-    throw new RangeError(`Pages must be planned for at least ${MIN_PAGE_SEC} s: minDwell ${minDwell}, maxDwell ${maxDwell}.`);
-  }
-  const rng = mulberry32(opts.seed);
+  checkDwell(opts.minDwell, opts.maxDwell);
+  return drawPages(mulberry32(opts.seed), SESSION_START, opts.minDwell, opts.maxDwell, opts.bias ?? null);
+}
+
+/**
+ * Draws the pages that follow `from` up to the end of the session, by the same rules as generate.
+ * Used to re-slice the rest of a session into shorter pages; the pages before stay as they are.
+ */
+export function continueFrom(from: Cursor, opts: GenerateOptions): Page[] {
+  checkDwell(opts.minDwell, opts.maxDwell);
+  return drawPages(mulberry32(opts.seed), from, opts.minDwell, opts.maxDwell, opts.bias ?? null);
+}
+
+function drawPages(rng: Rng, from: Cursor, minDwell: number, maxDwell: number, bias: Bias | null): Page[] {
   const items: Page[] = [];
-  let t = 0;
-  let prev: Page | null = null;
-  let catTwoBack: CatId | null = null;
-  let midiTwoBack: number | null = null;
+  let t = from.t;
+  let prev: Page | null = from.prev;
+  let catTwoBack: CatId | null = from.prevPrev ? from.prevPrev.cat : null;
+  let midiTwoBack: number | null = from.prevPrev ? from.prevPrev.midi : null;
+  // The last page is the shortest possible one; it never goes under the 2 s safety floor.
+  const absorbUnder = Math.max(minDwell / 2, MIN_PAGE_SEC);
 
   for (;;) {
     // Timing: a page absorbs the remainder when less than half of minDwell would be left after it.
     let dwell = minDwell + (maxDwell - minDwell) * rng();
-    const last = SESSION_SEC - (t + dwell) < minDwell / 2;
+    const last = SESSION_SEC - (t + dwell) < absorbUnder;
     if (last) dwell = SESSION_SEC - t;
     const tn = t / SESSION_SEC;
     const gi = Math.min(GROUP_COUNT - 1, Math.floor(t / GROUP_SEC));
@@ -138,7 +166,7 @@ export function generate(opts: GenerateOptions): Page[] {
     }
 
     const page: Page = {
-      i: items.length + 1,
+      i: from.i + items.length,
       start: t,
       dwell,
       phase: group.phase,

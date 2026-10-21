@@ -1,7 +1,56 @@
 import { expect, test } from './fixtures';
 import { feed, lingerCycle, openWithClock, pressDownTimes, rememberOnePage, setHidden, startSession } from './helpers';
 
+test('opening the app goes straight into the feed, and sound waits for the first touch', async ({ page }) => {
+  await page.goto('/');
+  const surface = page.locator('main.feed');
+  await expect(surface).toHaveAttribute('data-page', '1');
+  await expect(surface).toHaveAttribute('data-status', 'showing');
+  const hint = page.getByText('Swipe up for the next page', { exact: true });
+  await expect(hint).toBeVisible();
+  // No audio context before a gesture: browsers would block it.
+  expect((await feed(page))!.audio).toBe('idle');
+  await page.keyboard.press('ArrowDown');
+  await expect(surface).toHaveAttribute('data-page', '2');
+  await expect(hint).toBeHidden();
+  // Playwright's WebKit on Windows has no Web Audio, so there the feed runs on the silent engine.
+  const webAudio = await page.evaluate(() => 'AudioContext' in window || 'webkitAudioContext' in window);
+  if (webAudio) await expect.poll(async () => (await feed(page))!.audio).not.toBe('idle');
+});
+
+test('quick scrolling: after ten quick pages the rest is sliced so the session still lasts 15 minutes', async ({ page }) => {
+  await openWithClock(page);
+  await startSession(page);
+  const plan = () => page.evaluate(() => window.__calm!.getState().feed!.state.session.items.map((p) => `${p.hex} ${p.midi} ${p.dwell}`));
+  const before = await plan();
+  for (let i = 0; i < 10; i++) {
+    await page.clock.runFor(2500);
+    await page.keyboard.press('ArrowDown');
+  }
+  await expect(page.locator('main.feed')).toHaveAttribute('data-page', '11');
+  // The pace check waits for the browser to be idle after the tenth page change.
+  await page.clock.runFor(1600);
+  await expect.poll(async () => (await feed(page))!.pages).toBeGreaterThan(before.length);
+
+  const s = (await feed(page))!;
+  const after = await plan();
+  // The pages seen and the page on screen stay as they were.
+  expect(after.slice(0, 11)).toEqual(before.slice(0, 11));
+  expect(s.valid).toBe(true);
+  // At 2.5 s a page, the pages left now fill the rest of the 15 minutes.
+  const projected = 25 + (s.pages - 1 - s.index) * 2.5;
+  expect(projected).toBeGreaterThan(0.95 * 900);
+  expect(projected).toBeLessThan(1.06 * 900);
+  // No page is planned under 2 s.
+  expect(Math.min(...after.map((p) => Number(p.split(' ')[2])))).toBeGreaterThanOrEqual(2);
+  // Nothing breaks on the next page changes.
+  await pressDownTimes(page, 3);
+  await expect(page.locator('main.feed')).toHaveAttribute('data-page', '14');
+});
+
 test('scenarios 1 to 4: a session moves on, lingers, ends, and a remembered page returns', async ({ page }) => {
+  // Four scenarios in a row, about a minute in WebKit on a quiet machine.
+  test.slow();
   await openWithClock(page);
   await startSession(page);
 
@@ -51,8 +100,8 @@ test('scenarios 1 to 4: a session moves on, lingers, ends, and a remembered page
 });
 
 test('scenario 5: in "2, 5, 9 s" mode breaths last 2, 5, 9 and 9 s', async ({ page }) => {
-  await openWithClock(page);
-  await page.getByText('2, 5, 9 s').click();
+  await openWithClock(page, '/#/settings');
+  await page.getByText('2, 5, 9 s', { exact: true }).click();
   await startSession(page);
   const s = await feed(page);
   await page.clock.runFor(Math.ceil(s!.planned * 1000) + 25_100);
@@ -161,7 +210,7 @@ test('scenario 12: memory survives a reload', async ({ page }) => {
   await page.reload();
   await page.goto('/#/memory');
   await expect(page.getByTestId('memory-page')).toHaveCount(1);
-  await page.goto('/');
+  await page.goto('/#/done');
   await expect(page.getByTestId('last-session')).toContainText('Last session: 1 page');
 });
 
@@ -170,15 +219,13 @@ test.describe('scenario 13: a 390 × 844 phone', () => {
 
   test('no horizontal overflow, and tapping Next advances', async ({ page }) => {
     await openWithClock(page);
-    for (const route of ['/', '/#/settings', '/#/memory', '/#/about', '/#/dev']) {
+    for (const route of ['/#/done', '/#/settings', '/#/memory', '/#/about', '/#/dev']) {
       await page.goto(route);
       await expect(page.locator('h1')).toBeVisible();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, route).toBeLessThanOrEqual(0);
     }
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Start session' }).tap();
-    await expect(page.locator('main.feed')).toHaveAttribute('data-page', '1');
+    await startSession(page);
     await page.clock.runFor(1000);
     await page.getByRole('button', { name: 'Next page' }).tap();
     await expect(page.locator('main.feed')).toHaveAttribute('data-page', '2');
