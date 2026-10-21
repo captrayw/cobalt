@@ -6,6 +6,10 @@ A phone-first web app that plays a 15-minute feed of full-screen colors and soft
 
 Version 1 is an installable progressive web app (PWA): no account, no network requests, no analytics.
 
+## Day and night
+
+In a session, swipe right, or press →, for night. Each page then takes its group's color from the evening sequence in A Color Company's research (Sequence B): warm and dim, with no blue or cyan, and a little darker page by page, while the text stays readable. Swipe left, or press ←, for day. A short notice names the mode as it changes. Faint arrows at the left and right edges show the swipe until it has been used once, as the arrow at the bottom does for the swipe up. The choice is kept for later sessions, and it can also be set in Settings, under Screen and color. The sound is the same by day and by night. The Done for now screen explains both modes, and a session's summary shows the pages lingered on in the colors they were seen in.
+
 ## Run it
 
 Requires Node.js 22 or later and pnpm (via `corepack enable pnpm`).
