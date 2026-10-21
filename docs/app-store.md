@@ -1,6 +1,6 @@
 # Putting cobalt on the App Store
 
-cobalt's iPhone app is built: the same app as the web version, in a native shell (`apps/web/ios`). GitHub builds it on its Mac computers, so no Mac is needed. What is left needs your Apple account: steps 1 to 6 below set it up once, step 7 is a check on your own iPhone, and steps 8 and 9 send cobalt to Apple's review.
+cobalt's iPhone app is built: the app runs in a native iPhone shell (`apps/web/ios`). GitHub builds it on its Mac computers, so no Mac is needed. What is left needs your Apple account: steps 1 to 6 below set it up once, step 7 is a check on your own iPhone, and steps 8 and 9 send cobalt to Apple's review.
 
 Costs: the Apple Developer Program is US$99 a year. GitHub's Mac builds are free for a public repository such as this one.
 
@@ -140,7 +140,7 @@ If Apple answers that cobalt is a website in an app (guideline 4.2, minimum func
 
 ## Updating the app later
 
-Changes to the app reach the web version on every push to `main`, as before. For the App Store, raise the version in Xcode's project file (`MARKETING_VERSION` in `apps/web/ios/App/App.xcodeproj/project.pbxproj`, from 1.0 to 1.1), push, and run **Actions → iOS** with **Upload to TestFlight**. Then, in App Store Connect, add the new version with **+**, choose its build, say what changed, and submit it.
+Every push to `main` also republishes the support and privacy pages at captrayw.github.io/cobalt. For the App Store, raise the version in Xcode's project file (`MARKETING_VERSION` in `apps/web/ios/App/App.xcodeproj/project.pbxproj`, from 1.0 to 1.1), push, and run **Actions → iOS** with **Upload to TestFlight**. Then, in App Store Connect, add the new version with **+**, choose its build, say what changed, and submit it.
 
 ## How it works
 
