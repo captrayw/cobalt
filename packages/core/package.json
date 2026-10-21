@@ -1,0 +1,14 @@
+{
+  "name": "@calm/core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure, deterministic Calm Scroll rules: generator, nine checks, color math, linger rhythm and learning loop. No DOM, audio or storage.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "vitest run --root ../.. --project core"
+  }
+}

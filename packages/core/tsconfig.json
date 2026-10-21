@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // No DOM and no Node types: anything outside plain ES2022 fails to type-check here.
+    "lib": ["ES2022"],
+    "types": [],
+    // Erasable syntax only, so Node can run these files directly with type stripping.
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src"]
+}
