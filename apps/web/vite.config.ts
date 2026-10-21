@@ -57,8 +57,8 @@ export default defineConfig({
         scope: base,
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#090C12',
-        theme_color: '#090C12',
+        background_color: '#111014',
+        theme_color: '#111014',
         // A relaxation aid: no health category, so no store listing implies a medical purpose.
         categories: ['lifestyle'],
         icons: [

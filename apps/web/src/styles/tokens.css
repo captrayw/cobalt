@@ -1,71 +1,98 @@
-/* Design tokens from the prototype: dark first, with a light theme. */
+/*
+ * Design tokens, matched to the A Color Company website: a plain warm canvas, solid cards, one
+ * cadmium accent and a pigment per group. Dark first, with a light theme. The light accent is a
+ * deeper cadmium than the website's #E0402A so text on it, and in it, keeps 4.5 : 1.
+ */
 
 :root {
   color-scheme: dark;
-  --bg: #090c12;
-  --panel: #0f131b;
-  --panel-2: #151b26;
-  --line: #222a38;
-  --line-strong: #344055;
-  --ink: #e7ebf3;
-  --ink-2: #a7b0c1;
-  --ink-3: #788295;
-  --accent: #a9b3ff;
-  --on-accent: #0b0e16;
+  --bg: #111014;
+  --panel: #1c1a21;
+  --panel-2: #26232d;
+  --line: #34303d;
+  --line-strong: #6e6779;
+  --ink: #f6f1e7;
+  --ink-2: #dcd5c8;
+  --ink-3: #a8a0b3;
+  --accent: #ff6a4d;
+  --on-accent: #111014;
   --good: #5cc492;
-  --bad: #f08484;
+  --bad: #ff8a75;
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
   --page-ink: #0b0e14;
-  /* The About glow: a soft cobalt, as an RGB triplet so its strength can vary by theme. */
-  --cobalt: 46 92 196;
-  --glow: 0.55;
+  /* The one primary button: an ink outline with a small offset shadow. */
+  --outline: #f3eee4;
+  --shadow-ink: #000000;
+  /* Pigment markers beside card headings. */
+  --p-blue: #5b78ff;
+  --p-yellow: #ffc21a;
+  --p-green: #22c79a;
+  --p-red: #ff5a3d;
+  --p-violet: #9b6bff;
+  /* The About glow: the website's cobalt, as an RGB triplet so its strength can vary by theme. */
+  --cobalt: 4 62 205;
+  --glow: 0.6;
 
   --radius: 10px;
-  --font-head: 'Unbounded', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-body: 'Barlow', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-head: 'Bricolage Grotesque', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
     color-scheme: light;
-    --bg: #f1f3f7;
-    --panel: #ffffff;
-    --panel-2: #e8ecf3;
-    --line: #d5dbe6;
-    --line-strong: #b5bfd0;
-    --ink: #0c111b;
-    --ink-2: #444e63;
-    --ink-3: #636d81;
-    --accent: #3b47bc;
+    --bg: #f3eee4;
+    --panel: #fffcf6;
+    --panel-2: #efe7d9;
+    --line: #d9cfbf;
+    --line-strong: #8f8576;
+    --ink: #121014;
+    --ink-2: #2e2a33;
+    --ink-3: #575160;
+    --accent: #c4361f;
     --on-accent: #ffffff;
     --good: #1c7a51;
     --bad: #b23b3b;
     --series-1: #2a78d6;
     --series-2: #eb6834;
     --series-3: #1baf7a;
+    --outline: #17151a;
+    --shadow-ink: #121014;
+    --p-blue: #2747d8;
+    --p-yellow: #f4b000;
+    --p-green: #0fa37f;
+    --p-red: #e0402a;
+    --p-violet: #6c3fd1;
     --glow: 0.24;
   }
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f1f3f7;
-  --panel: #ffffff;
-  --panel-2: #e8ecf3;
-  --line: #d5dbe6;
-  --line-strong: #b5bfd0;
-  --ink: #0c111b;
-  --ink-2: #444e63;
-  --ink-3: #636d81;
-  --accent: #3b47bc;
+  --bg: #f3eee4;
+  --panel: #fffcf6;
+  --panel-2: #efe7d9;
+  --line: #d9cfbf;
+  --line-strong: #8f8576;
+  --ink: #121014;
+  --ink-2: #2e2a33;
+  --ink-3: #575160;
+  --accent: #c4361f;
   --on-accent: #ffffff;
   --good: #1c7a51;
   --bad: #b23b3b;
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
+  --outline: #17151a;
+  --shadow-ink: #121014;
+  --p-blue: #2747d8;
+  --p-yellow: #f4b000;
+  --p-green: #0fa37f;
+  --p-red: #e0402a;
+  --p-violet: #6c3fd1;
   --glow: 0.24;
 }

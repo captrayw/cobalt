@@ -127,9 +127,17 @@ export async function reloadFromRepo(): Promise<void> {
   useApp.setState({ settings, memory, lastSession });
 }
 
-function createEngine(volumeDb: number): AudioEngine {
+/** A Web Audio engine, or a silent one where the browser has no Web Audio. */
+export function createEngine(volumeDb: number): AudioEngine {
   const hasWebAudio = typeof window !== 'undefined' && ('AudioContext' in window || 'webkitAudioContext' in window);
   return hasWebAudio ? new WebAudioEngine({ volumeDb }) : new NullAudioEngine();
+}
+
+/** Clear remembered pages and stored sessions, after a snapshot of the memory. Settings stay. */
+export async function resetMemory(): Promise<void> {
+  const { repo } = useApp.getState();
+  if (repo) await repo.reset(Date.now());
+  useApp.setState({ memory: emptyMemory(), lastSession: null });
 }
 
 /** Owner change (Oct 2026): every session uses the 5 to 10 s pace and the gradual linger rhythm. */

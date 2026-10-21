@@ -1,19 +1,9 @@
-import { baseL, CHROMA, FAMILY_BY_ID, fitChroma, GROUPS, oklchToHex } from '@calm/core';
 import { useEffect, useRef } from 'react';
+import { ARC } from '../arc';
 import { navigate } from '../router';
 import { startSession, useApp } from '../store';
 import type { SessionDoc } from '../storage/types';
 import { formatMinutes } from '../ui';
-
-/** One color per group at its center: the group's main family, lightness and chroma. */
-const ARC = GROUPS.map((g) => {
-  const tn = (g.phase - 0.5) / GROUPS.length;
-  const main = [...g.fams].sort((a, b) => b.w - a.w)[0].cat;
-  const [lo, hi] = FAMILY_BY_ID[main].band;
-  const h = (lo + hi) / 2,
-    L = baseL(tn);
-  return { name: g.name, hex: oklchToHex(L, fitChroma(L, CHROMA.start + (CHROMA.end - CHROMA.start) * tn, h), h) };
-});
 
 function lastLine(last: SessionDoc | null): string {
   if (!last?.totals) return 'No session has finished on this device yet.';

@@ -50,7 +50,33 @@ export interface Choice<T extends string> {
   label: string;
 }
 
-/** A radio group drawn as pills. */
+/** A light tap on phones that have one, as instant feedback for a change. */
+export function haptic(): void {
+  try {
+    navigator.vibrate?.(10);
+  } catch {
+    // No vibration here: the change on screen is the feedback.
+  }
+}
+
+/** The label of a settings row, with its one line of help underneath. */
+export function RowText({ label, labelId, hint, hintId }: { label: ReactNode; labelId: string; hint?: ReactNode; hintId: string }) {
+  // Spans throughout, so a whole row can also be a button.
+  return (
+    <span className="row-text">
+      <span id={labelId} className="row-label">
+        {label}
+      </span>
+      {hint && (
+        <span id={hintId} className="row-help">
+          {hint}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** A choice among a few short options, as a settings row: label and help, then the options as pills. */
 export function Segmented<T extends string>({
   legend,
   hint,
@@ -65,31 +91,51 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void;
 }) {
   const name = useId();
+  const labelId = useId();
+  const hintId = useId();
   return (
-    <fieldset className="field">
-      <legend className="label">{legend}</legend>
-      <div className="segmented">
+    <div className="set-row set-row-wide">
+      <RowText label={legend} labelId={labelId} hint={hint} hintId={hintId} />
+      <div className="segmented" role="radiogroup" aria-labelledby={labelId} aria-describedby={hint ? hintId : undefined}>
         {choices.map((c) => (
           <label key={c.value}>
-            <input type="radio" name={name} value={c.value} checked={value === c.value} onChange={() => onChange(c.value)} />
+            <input
+              type="radio"
+              name={name}
+              value={c.value}
+              checked={value === c.value}
+              onChange={() => {
+                haptic();
+                onChange(c.value);
+              }}
+            />
             {c.label}
           </label>
         ))}
       </div>
-      {hint && <p className="hint">{hint}</p>}
-    </fieldset>
+    </div>
   );
 }
 
+/** An on/off setting as a settings row: label and help on the left, the switch on the right. */
 export function Switch({ label, hint, checked, onChange }: { label: string; hint?: ReactNode; checked: boolean; onChange: (checked: boolean) => void }) {
-  const id = useId();
+  const labelId = useId();
+  const hintId = useId();
   return (
-    <div className="stack-tight">
-      <div className="switch-row">
-        <span id={id}>{label}</span>
-        <button type="button" role="switch" className="switch" aria-checked={checked} aria-labelledby={id} onClick={() => onChange(!checked)} />
-      </div>
-      {hint && <p className="hint">{hint}</p>}
+    <div className="set-row">
+      <RowText label={label} labelId={labelId} hint={hint} hintId={hintId} />
+      <button
+        type="button"
+        role="switch"
+        className="switch"
+        aria-checked={checked}
+        aria-labelledby={labelId}
+        aria-describedby={hint ? hintId : undefined}
+        onClick={() => {
+          haptic();
+          onChange(!checked);
+        }}
+      />
     </div>
   );
 }

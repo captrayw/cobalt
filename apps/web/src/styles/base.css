@@ -26,18 +26,19 @@ h2,
 h3 {
   margin: 0;
   font-family: var(--font-head);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
+/* The type scale: 28 px titles, 18 px card headings, 17 px text, 14 px helper text and values. */
 h1 {
-  font-size: clamp(26px, 7vw, 34px);
+  font-size: 28px;
 }
 
 h2 {
-  font-size: 19px;
+  font-size: 18px;
 }
 
 h3 {
@@ -165,7 +166,7 @@ h1[tabindex='-1']:focus {
   border-radius: var(--radius);
   background: transparent;
   color: var(--ink-2);
-  font: 500 13px/1 var(--font-mono);
+  font: 400 14px/1 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
@@ -223,17 +224,51 @@ h1[tabindex='-1']:focus {
   cursor: default;
 }
 
+/* The one primary button per screen: the website's outlined, offset-shadow style, scaled down to 2 px. */
 .btn-primary {
   min-height: 56px;
   background: var(--accent);
-  border-color: transparent;
+  border: 2px solid var(--outline);
   color: var(--on-accent);
   font-size: 18px;
+  box-shadow: 2px 2px 0 var(--shadow-ink);
 }
 
 .btn-primary:hover {
-  border-color: transparent;
-  filter: brightness(1.05);
+  border-color: var(--outline);
+  filter: brightness(1.06);
+}
+
+.btn-primary:active {
+  translate: 2px 2px;
+  box-shadow: none;
+}
+
+/* A secondary action drawn as plain text, with a full-size tap target. */
+.btn-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+.btn-text:hover {
+  background: var(--panel-2);
+}
+
+.btn-text.danger {
+  color: var(--bad);
 }
 
 .btn-danger {
@@ -331,26 +366,19 @@ h1[tabindex='-1']:focus {
   cursor: pointer;
 }
 
+/* The selected option takes the one accent color. */
 .segmented label:has(input:checked) {
-  background: var(--panel);
-  color: var(--ink);
-  box-shadow: 0 0 0 1px var(--line-strong);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
+/* Ink, not accent: the ring has to show on the accent-filled option too. */
 .segmented label:has(input:focus-visible) {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 1px;
 }
 
-/* Switch */
-.switch-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 44px;
-}
-
+/* Switch: the standard platform shape, a white knob on a track tinted with the accent when on. */
 .switch {
   position: relative;
   flex: none;
@@ -366,27 +394,28 @@ h1[tabindex='-1']:focus {
   content: '';
   position: absolute;
   left: 0;
-  top: 9px;
+  top: 6px;
   width: 52px;
-  height: 26px;
-  border-radius: 13px;
+  height: 32px;
+  border-radius: 16px;
   background: var(--panel-2);
   border: 1px solid var(--line-strong);
-  transition: background-color 0.18s ease;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .switch::after {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 13px;
-  width: 18px;
-  height: 18px;
+  left: 3px;
+  top: 9px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: var(--ink-2);
-  transition:
-    transform 0.18s ease,
-    background-color 0.18s ease;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 0.18s ease;
 }
 
 .switch[aria-checked='true']::before {
@@ -395,8 +424,7 @@ h1[tabindex='-1']:focus {
 }
 
 .switch[aria-checked='true']::after {
-  transform: translateX(26px);
-  background: var(--on-accent);
+  transform: translateX(20px);
 }
 
 .switch:focus-visible {
@@ -404,8 +432,176 @@ h1[tabindex='-1']:focus {
 }
 
 .switch:focus-visible::before {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
+}
+
+/* Settings rows: the label with one line of help on the left, the control on the right. Every card
+   uses the same radius, border, padding and row height. */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 4px 16px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0 6px;
+}
+
+/* A pigment marker per group, as on the website. */
+.chip {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--chip);
+}
+
+.chip-arc {
+  width: 28px;
+  height: 11px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #d9826b, #d8b878, #8fae8b, #5e9c9a, #6f88b0, #8e80a8, #8c9bb0);
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  padding: 12px 0;
+}
+
+.card-head + .set-row {
+  padding-top: 6px;
+}
+
+.set-row + .set-row {
+  border-top: 1px solid var(--line);
+}
+
+/* Long controls (sliders, three-way choices) take the full width on a line of their own. */
+.set-row-wide {
+  flex-wrap: wrap;
+}
+
+.set-row-wide > .segmented,
+.set-row-wide > .range {
+  flex: 1 1 100%;
+}
+
+.row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.row-label {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.row-help {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.row-value {
+  flex: none;
+  font: 400 14px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+button.set-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.set-row:hover .row-label {
+  color: var(--accent);
+}
+
+.mini-swatches {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.mini-swatches span {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+/* Live preview: the first page of a session as it would look and sound now. */
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.preview-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 120px;
+  border-radius: var(--radius);
+  color: var(--page-ink);
+  font: 400 14px/1.3 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background-color 0.2s ease;
+}
+
+.preview-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.preview-strip span {
+  height: 10px;
+  border-radius: 3px;
+}
+
+.preview-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-foot .row-help {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Range */
@@ -436,7 +632,7 @@ h1[tabindex='-1']:focus {
 
 .hint {
   color: var(--ink-2);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -670,10 +866,35 @@ h1[tabindex='-1']:focus {
   color: var(--ink-2);
 }
 
-.about-maker {
-  font: 400 clamp(32px, 9.5vw, 46px) / 1.1 var(--font-body);
-  letter-spacing: -0.01em;
+/*
+ * The A Color Company lockup, as on the website: the calm-arc bar, then the wordmark in Bricolage
+ * Grotesque 800 at -0.02em. Sized in em from the header's 28 x 11 px bar beside 17 px type, so the
+ * proportions hold at any size. Clear space above it at least matches the bar's height.
+ */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.59em;
+  margin-top: 10px;
+  font: 800 clamp(24px, 7.5vw, 34px) / 1.1 var(--font-head);
+  letter-spacing: -0.02em;
   color: var(--ink);
+  white-space: nowrap;
+}
+
+.brand-mark {
+  flex: none;
+  width: 1.65em;
+  height: 0.65em;
+  border-radius: 0.18em;
+  background: linear-gradient(90deg, #d9826b, #d8b878, #8fae8b, #5e9c9a, #6f88b0, #8e80a8, #8c9bb0);
+  filter: url(#impasto);
+}
+
+.filter-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
 }
 
 .about-rule {

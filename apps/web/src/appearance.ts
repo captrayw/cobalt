@@ -4,7 +4,7 @@ import { useApp } from './store';
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
 const LIGHT_QUERY = '(prefers-color-scheme: light)';
 /** The bg token of each theme, for the browser's status bar. */
-const THEME_BG = { dark: '#090C12', light: '#F1F3F7' } as const;
+const THEME_BG = { dark: '#111014', light: '#F3EEE4' } as const;
 
 // One MediaQueryList per query, made once: reading .matches is cheap, matchMedia() is not, and the
 // feed reads the motion preference on every page change.

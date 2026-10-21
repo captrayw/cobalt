@@ -1,11 +1,13 @@
-// Self-hosted fonts (latin subsets only): bundled and precached, never fetched from a third party.
-import '@fontsource/unbounded/latin-600.css';
-import '@fontsource/barlow/latin-400.css';
-import '@fontsource/barlow/latin-500.css';
-import '@fontsource/barlow/latin-600.css';
-import '@fontsource/jetbrains-mono/latin-400.css';
-import '@fontsource/jetbrains-mono/latin-500.css';
-import '@fontsource/jetbrains-mono/latin-600.css';
+// The website's three families, self-hosted (latin subsets only): bundled and precached, never
+// fetched from a third party. Bricolage Grotesque for headings and the wordmark, Instrument Sans
+// for text, Space Mono for values.
+import '@fontsource/bricolage-grotesque/latin-700.css';
+import '@fontsource/bricolage-grotesque/latin-800.css';
+import '@fontsource/instrument-sans/latin-400.css';
+import '@fontsource/instrument-sans/latin-500.css';
+import '@fontsource/instrument-sans/latin-600.css';
+import '@fontsource/space-mono/latin-400.css';
+import '@fontsource/space-mono/latin-700.css';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/feed.css';

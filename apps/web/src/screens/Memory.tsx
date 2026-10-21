@@ -1,7 +1,7 @@
-import { emptyMemory, groupOf, newSeed, noteName, scoreMean, simulate, type PageMemory } from '@calm/core';
+import { groupOf, newSeed, noteName, scoreMean, simulate, type PageMemory } from '@calm/core';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { LineChart, type LineSeries } from '../charts/LineChart';
-import { reloadFromRepo, useApp } from '../store';
+import { reloadFromRepo, resetMemory, useApp } from '../store';
 import { applyImport, checkImport, exportAll, exportFileName, exportJson, type ExportFile, type ImportSummary } from '../storage';
 import { percent, Screen, Swatch } from '../ui';
 
@@ -154,8 +154,7 @@ export function MemoryScreen() {
 
   const onConfirmReset = () =>
     run(async () => {
-      if (repo) await repo.reset(Date.now());
-      useApp.setState({ memory: emptyMemory(), lastSession: null });
+      await resetMemory();
       setResetArmed(false);
       setMessage('Memory cleared. Settings are unchanged.');
     }, 'The reset did not finish, so nothing was changed.');
