@@ -100,6 +100,8 @@ export interface DwellRecord {
   dwell: number;
   sleep: boolean;
   cycles: number;
+  /** Shown in night colors. Scoring and learning do not use it. */
+  night?: boolean;
 }
 
 export interface ScoredRecord extends DwellRecord {

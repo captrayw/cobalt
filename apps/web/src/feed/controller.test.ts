@@ -82,7 +82,7 @@ describe('feed controller', () => {
     const finished: SessionDoc[] = [];
     const wake: boolean[] = [];
     const feed = new FeedController(
-      { id: '01TEST', session, mode: 'gradual', pace: 'standard', useMemory: true, memory: null },
+      { id: '01TEST', session, mode: 'gradual', pace: 'standard', useMemory: true, memory: null, night: false },
       {
         engine: audio.engine,
         hooks: { checkpoint: (d) => checkpoints.push(d), finish: (d) => finished.push(d) },
@@ -369,6 +369,22 @@ describe('feed controller', () => {
     expect(checkpoints[0].records).toEqual([expect.objectContaining({ index: 0, dwell: 6.5 })]);
     expect(finished).toHaveLength(1);
     expect(finished[0].status).toBe('done');
+  });
+
+  it('notes on each saved page whether it was shown by day or by night, without touching the sound', () => {
+    const { feed, audio, finished } = setup();
+    feed.start();
+    skip(3000);
+    const voices = audio.calls.filter((c) => c.method === 'voice').length;
+    feed.setNight(true);
+    expect(audio.calls.filter((c) => c.method === 'voice')).toHaveLength(voices);
+    feed.next();
+    skip(3000);
+    feed.setNight(false);
+    feed.next();
+    skip(3000);
+    feed.end();
+    expect(finished[0].records.map((r) => r.night)).toEqual([true, false, false]);
   });
 
   it('passes volume changes to the engine', () => {

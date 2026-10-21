@@ -159,7 +159,7 @@ export function startSession(gesture: boolean): void {
   const session = prepareValidSession({ ...PACE_PRESETS[PACE], memory, useMemory: settings.useMemory }, newSeed);
   const id = ulid(Date.now());
   const feed = new FeedController(
-    { id, session, mode: RHYTHM, pace: PACE, useMemory: settings.useMemory, memory: settings.useMemory ? memory : null },
+    { id, session, mode: RHYTHM, pace: PACE, useMemory: settings.useMemory, memory: settings.useMemory ? memory : null, night: settings.night },
     {
       engine: createEngine(settings.volumeDb),
       hooks: {

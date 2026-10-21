@@ -20,11 +20,12 @@ import type { FeedEffect, FeedEvent, FeedState, FeedStep } from './types';
  * The feed as a pure reducer over timestamped events (ms on the performance clock), with six
  * states: idle, showing, lingering, resting, paused and ended. Effects are returned, never run.
  */
-export function createFeedState(session: Session, mode: LingerMode): FeedState {
+export function createFeedState(session: Session, mode: LingerMode, night = false): FeedState {
   return {
     status: 'idle',
     session,
     mode,
+    night,
     index: 0,
     t0: 0,
     lastActivity: 0,
@@ -64,6 +65,7 @@ export const currentRecord = (s: FeedState, at: number): DwellRecord => ({
   dwell: dwellSec(s, at),
   sleep: s.sleep,
   cycles: s.breath,
+  night: s.night,
 });
 
 /** Opacity of the dim layer for the current breath. */
@@ -262,6 +264,8 @@ export function reduce(s: FeedState, e: FeedEvent): FeedStep {
       return onHidden(s, e.at);
     case 'visible':
       return onVisible(s, e.at);
+    case 'night':
+      return s.night === e.night ? step(s) : step({ ...s, night: e.night });
     case 'end':
       return isActive(s) ? finish(s, e.at, []) : step(s);
   }

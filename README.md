@@ -2,7 +2,7 @@
 
 A cobalt app by A Color Company, [acolorcompany.com](https://acolorcompany.com). It runs at https://captrayw.github.io/cobalt/.
 
-A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
+A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. At night, a swipe to the right turns the colors warm and dim, with no blue, darker page by page; a swipe to the left brings the day colors back. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
 
 Version 1 is an installable progressive web app (PWA): no account, no network requests, no analytics.
 
@@ -58,7 +58,7 @@ If the project sits in a folder that OneDrive (or another sync tool) syncs, a bu
 
 ## Status
 
-Milestones 1 to 5 are built. Their gates pass locally, except the parts that need the reference code or real hardware (see `docs/decisions.md`). Milestones 6 (cloud sync) and 7 (evening and research modes) wait for the owner's approval.
+Milestones 1 to 5 are built, and evening mode from milestone 7. Their gates pass locally, except the parts that need the reference code or real hardware (see `docs/decisions.md`). Milestone 6 (cloud sync) and research mode wait for the owner's approval.
 
 cobalt makes no medical or therapeutic claims.
 

@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { ARC } from '../arc';
+import { useEffect, useId, useRef } from 'react';
+import { ARC, NIGHT_ARC } from '../arc';
 import { navigate } from '../router';
 import { startSession, useApp } from '../store';
 import type { SessionDoc } from '../storage/types';
-import { formatMinutes } from '../ui';
+import { CardHead, formatMinutes, MiniArc, RowText } from '../ui';
 
 function lastLine(last: SessionDoc | null): string {
   if (!last?.totals) return 'No session has finished on this device yet.';
@@ -14,8 +14,9 @@ function lastLine(last: SessionDoc | null): string {
 }
 
 /**
- * Where a person lands after choosing Done on the summary: a quiet stopping point. Opening the app
- * again goes straight back into scrolling.
+ * Where a person lands after choosing Done on the summary: a quiet stopping point, with day and
+ * night explained (each with its arc of colors) and the way back in at the bottom of the screen.
+ * Opening the app again goes straight back into scrolling.
  */
 export function Done() {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -24,9 +25,11 @@ export function Done() {
   const last = useApp((s) => s.lastSession);
   const remembered = useApp((s) => Object.keys(s.memory.pages).length);
   const note = useApp((s) => s.storageNote);
+  const night = useApp((s) => s.settings.night);
+  const ids = { modes: useId(), day: useId(), dayHint: useId(), night: useId(), nightHint: useId() };
 
   return (
-    <main className="screen">
+    <main className="screen screen-fill">
       <div className="column">
         <header className="screen-head">
           <h1 ref={heading} tabIndex={-1}>
@@ -38,18 +41,27 @@ export function Done() {
           {note && <p className="notice">{note}</p>}
         </header>
 
-        <div className="arc" role="img" aria-label="The arc: warm colors and higher notes at the start, cool and lower at the end.">
-          {ARC.map((step) => (
-            <div className="arc-step" key={step.name}>
-              <span className="arc-swatch" style={{ background: step.hex }} />
-              <span className="arc-name">{step.name}</span>
-            </div>
-          ))}
-        </div>
-
-        <button type="button" className="btn btn-primary btn-block" onClick={() => startSession(true)} disabled={!ready}>
-          Start a session
-        </button>
+        <section className="card" aria-labelledby={ids.modes} data-testid="day-night">
+          <CardHead id={ids.modes} chip="arc">
+            Day and night
+          </CardHead>
+          <div className="set-row">
+            <RowText label="Day" labelId={ids.day} hint="Soft colors that move from warm to cool as the session goes on." hintId={ids.dayHint} />
+            <MiniArc colors={ARC} />
+          </div>
+          <div className="set-row">
+            <RowText
+              label="Night"
+              labelId={ids.night}
+              hint="Warm, dim colors with no blue, darker page by page, to wind down before sleep."
+              hintId={ids.nightHint}
+            />
+            <MiniArc colors={NIGHT_ARC} />
+          </div>
+          <p className="row-help card-foot">
+            In a session, swipe right for night and left for day. {night ? 'Night' : 'Day'} is on now. The sound is the same in both.
+          </p>
+        </section>
 
         <nav className="nav-list" aria-label="More">
           <button type="button" className="nav-item" onClick={() => navigate('memory')}>
@@ -63,6 +75,10 @@ export function Done() {
             About
           </button>
         </nav>
+
+        <button type="button" className="btn btn-primary btn-block" onClick={() => startSession(true)} disabled={!ready}>
+          Start a session
+        </button>
       </div>
     </main>
   );

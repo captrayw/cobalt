@@ -44,6 +44,8 @@ export interface FeedState {
   sleep: boolean;
   /** Time of the last accepted page advance, ms. */
   lastAdvance: number;
+  /** Pages show their night colors. The sound is the same either way. */
+  night: boolean;
   records: DwellRecord[];
   startedAt: number;
   endedAt: number | null;
@@ -62,6 +64,8 @@ export type FeedEvent =
   | { type: 'interrupted'; at: number }
   | { type: 'hidden'; at: number }
   | { type: 'visible'; at: number }
+  /** Day or night colors from here on; each record notes which it was shown in. */
+  | { type: 'night'; at: number; night: boolean }
   | { type: 'end'; at: number };
 
 /** Side effects for the controller. Sound is scheduled 30 ms ahead on the audio clock. */

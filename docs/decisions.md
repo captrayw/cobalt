@@ -38,6 +38,14 @@ After trying version 1, the owner asked for these changes. They take precedence 
    - *Controls:* platform-style switches, segmented choices, a light haptic tap where the phone supports it, and the primary button in the website's outlined style with a 2 px offset shadow. Motion stays at short fades and follows the Motion setting.
    - *Left out, because the app has no such setting:* session length, pace, the warm opening stage, linger breathing on or off, a test-sound setting, haptic pulses per breath, dimming while lingering, an evening palette, a color-vision setting, the rest timer, what sound does at rest, privacy and account, "Delete data", and switching to dark mode in the evening by itself (the System theme follows the phone, which many phones switch at night).
 9. **The icon is the calm-arc mark.** As the brand guide suggests for an app icon: the mark alone, no text, on the website's warm canvas, with clear space on every side at least the bar's height. The bar carries the impasto texture, scaled with it (the header bar's noise grown with the bar, displacement about 6 per 30 px of bar height). The favicon is the flat version, the same gradient as a rounded square with no texture. Chromium, already installed for the tests, renders the icons, so the texture matches the website. An iPhone keeps the icon an app was added with, so the new one shows once cobalt is added to the home screen again.
+10. **Day and night.** Night colors for the feed: milestone 7's Evening mode, built at the owner's request.
+    - *Colors:* the prototype's Sequence B, evening ambient lighting (found in the website's color-calm page): warm white, amber, soft rose, pale gold, dim sage, very warm white and a deep red night-light, one per group, at intensities 1.00, 0.70, 0.55, 0.40, 0.25, 0.15 and 0.05. Pages in a group shift by up to 6° of hue, following where their day color sits in its family.
+    - *Dimming:* applied to the light itself (linear RGB), along one curve through the groups' intensities that never rises. Where a group's color would be brighter than the group before (pale gold after soft rose), it is held to the earlier level. The brief's checks hold: no blue or cyan (no hue from 160° to 300°), no page brighter than the one before, and the sound is the same as by day, so its checks are the session's own.
+    - *Ink:* text turns light on dark night pages. In the middle of the curve, where neither ink reaches 4.5 : 1, black or white is used (at least 4.58 : 1).
+    - *Switching:* in a session, a swipe mostly sideways of more than 50 px switches colors, right for night and left for day; the right and left arrow keys do the same. A notice, "Night mode" or "Day mode", fades in and out over 1.6 s. The choice is kept as a setting (Settings, Screen and color, Night mode) for later sessions.
+    - *Records:* each watched page notes whether it was shown at night, so the summary shows the colors that were seen. Learning still uses the pages as planned: their families and notes.
+    - *Done screen:* a "Day and night" card explains both modes with their arcs, and Start a session sits at the bottom of the screen. The arc strip that was there is gone, since the card shows both arcs.
+    - Research mode, the other half of milestone 7, is not built.
 
 ## Milestone gates
 
@@ -110,4 +118,4 @@ A compliance review (every rule in the brief) and a runtime bug hunt read the wh
 - Golden-file equivalence against the reference code (needs the reference files).
 - The listening check on one iPhone and one Android phone, and the loudness calibration (`docs/calibration.md`).
 - Installing on a physical phone, and a performance trace on a real mid-range Android device.
-- Milestones 6 and 7, pending the owner's approval.
+- Milestone 6, and research mode from milestone 7, pending the owner's approval. (Evening mode is built: owner change 10.)

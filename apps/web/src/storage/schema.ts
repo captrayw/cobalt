@@ -101,6 +101,7 @@ export const SessionRecordDocSchema: z.ZodType<SessionRecordDoc> = z.object({
   z: z.number().nullable(),
   linger: z.boolean(),
   item: PageSchema,
+  night: z.boolean().optional(),
 });
 
 const SessionTotalsSchema: z.ZodType<SessionTotals> = z.object({
@@ -135,6 +136,7 @@ export const SettingsSchema = z.object({
   useMemory: z.boolean(),
   volumeDb: z.number().min(USER_VOLUME_DB.min).max(USER_VOLUME_DB.max),
   pageDetails: z.boolean(),
+  night: z.boolean(),
   reducedMotion: z.enum(['system', 'reduce', 'allow']),
   theme: z.enum(['system', 'dark', 'light']),
 }) satisfies z.ZodType<Settings>;

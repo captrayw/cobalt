@@ -580,6 +580,30 @@ button.set-row:hover .row-label {
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
 }
 
+.mini-arc {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.mini-arc span {
+  width: 10px;
+  height: 22px;
+  border-radius: 3px;
+}
+
+.mini-arc span:first-child {
+  border-radius: 5px 3px 3px 5px;
+}
+
+.mini-arc span:last-child {
+  border-radius: 3px 5px 5px 3px;
+}
+
+.card-foot {
+  padding: 4px 0 16px;
+}
+
 /* Live preview: the first page of a session as it would look and sound now. */
 .preview {
   display: flex;
@@ -729,8 +753,8 @@ button.set-row:hover .row-label {
   display: inline-block;
   padding: 2px 7px;
   border-radius: 999px;
-  /* Lighter than the page, so page ink keeps its contrast. */
-  background: rgb(255 255 255 / 0.4);
+  /* Away from the ink (lighter under dark ink, darker under light), so the ink keeps its contrast. */
+  background: var(--mark-veil, rgb(255 255 255 / 0.4));
   font: 600 11px/1.5 var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -779,33 +803,6 @@ button.set-row:hover .row-label {
   background: var(--panel-2);
   color: var(--ink);
   font-size: 15px;
-}
-
-/* Arc strip on Home */
-.arc {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
-}
-
-.arc-step {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.arc-swatch {
-  height: 40px;
-  border-radius: var(--radius);
-}
-
-.arc-name {
-  font: 500 11px/1.2 var(--font-mono);
-  color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* About: the maker's name, centered over a slow cobalt glow, with the rights line at the foot. */

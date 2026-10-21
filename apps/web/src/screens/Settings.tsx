@@ -1,11 +1,11 @@
 import type { AudioEngine } from '@calm/audio';
-import { generateValid, PACE_PRESETS, SCHEDULE, scoreMean, USER_VOLUME_DB } from '@calm/core';
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { ARC } from '../arc';
+import { eveningColor, generateValid, PACE_PRESETS, readableInk, SCHEDULE, scoreMean, USER_VOLUME_DB } from '@calm/core';
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { ARC, NIGHT_ARC } from '../arc';
 import { navigate } from '../router';
 import { createEngine, resetMemory, updateSettings, useApp } from '../store';
 import type { MotionSetting, ThemeSetting } from '../storage/types';
-import { haptic, RowText, Screen, Segmented, Switch } from '../ui';
+import { CardHead, haptic, RowText, Screen, Segmented, Switch } from '../ui';
 
 const MOTION = [
   { value: 'system', label: 'System' },
@@ -73,20 +73,6 @@ function useSampleNote() {
   );
 
   return { prime, play, playSoon };
-}
-
-/** A card heading with its pigment marker, as on the website. */
-function CardHead({ id, chip, children }: { id: string; chip: string | 'arc'; children: ReactNode }) {
-  return (
-    <div className="card-head">
-      {chip === 'arc' ? (
-        <span className="chip chip-arc" aria-hidden="true" />
-      ) : (
-        <span className="chip" style={{ '--chip': chip } as CSSProperties} aria-hidden="true" />
-      )}
-      <h2 id={id}>{children}</h2>
-    </div>
-  );
 }
 
 function Chevron() {
@@ -172,6 +158,7 @@ export function SettingsScreen() {
   const learned =
     remembered.length === 0 ? 'Nothing yet' : `${remembered.length} remembered ${remembered.length === 1 ? 'page' : 'pages'}`;
   const volumeText = s.volumeDb === 0 ? '0 dB, the maximum' : `${s.volumeDb} dB`;
+  const shown = s.night ? eveningColor(SAMPLE) : { hex: SAMPLE.hex, name: SAMPLE.catName };
 
   return (
     <Screen title="Settings">
@@ -182,19 +169,19 @@ export function SettingsScreen() {
           </CardHead>
           <div
             className="preview-page"
-            style={{ background: SAMPLE.hex }}
+            style={{ background: shown.hex, '--page-ink': readableInk(shown.hex) } as CSSProperties}
             role="img"
-            aria-label={`The first page of a session: ${SAMPLE.catName}, note ${SAMPLE.note}.`}
+            aria-label={`The first page of a session${s.night ? ' at night' : ''}: ${shown.name}, note ${SAMPLE.note}.`}
           >
             {s.pageDetails && (
               <>
                 <span>{SAMPLE.note}</span>
-                <span>{SAMPLE.catName}</span>
+                <span>{shown.name}</span>
               </>
             )}
           </div>
           <div className="preview-strip" aria-hidden="true">
-            {ARC.map((step) => (
+            {(s.night ? NIGHT_ARC : ARC).map((step) => (
               <span key={step.name} style={{ background: step.hex }} />
             ))}
           </div>
@@ -257,6 +244,12 @@ export function SettingsScreen() {
             hint="Show each page's note and color name."
             checked={s.pageDetails}
             onChange={(pageDetails) => void updateSettings({ pageDetails })}
+          />
+          <Switch
+            label="Night mode"
+            hint="Warm, dim colors with no blue. In a session, swipe right for night, left for day."
+            checked={s.night}
+            onChange={(night) => void updateSettings({ night })}
           />
           <Segmented legend="Theme" hint="System follows your phone." value={s.theme} choices={THEMES} onChange={(theme) => void updateSettings({ theme })} />
           <Segmented

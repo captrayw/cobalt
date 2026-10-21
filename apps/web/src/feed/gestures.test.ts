@@ -26,6 +26,13 @@ describe('key filter (scenario 7)', () => {
     expect(classifyKey('Escape', null)).toBe('end');
     for (const key of ['ArrowUp', 'a', 'Shift', 'Enter', 'k']) expect(classifyKey(key, el('BODY'))).toBe('activity');
   });
+
+  it('← is day and → is night, except while typing in a form control', () => {
+    expect(classifyKey('ArrowLeft', el('MAIN'))).toBe('day');
+    expect(classifyKey('ArrowRight', el('MAIN'))).toBe('night');
+    expect(classifyKey('ArrowRight', el('BUTTON'))).toBe('night');
+    expect(classifyKey('ArrowLeft', el('INPUT'))).toBe('ignore');
+  });
 });
 
 describe('wheel gestures', () => {
@@ -69,5 +76,14 @@ describe('pointer gestures', () => {
     expect(pointerAction(0, -40)).toBe('activity');
     expect(pointerAction(2, 3)).toBe('tap');
     expect(pointerAction(0, 80)).toBe('activity');
+  });
+
+  it('a swipe mostly sideways of more than 50 px is day to the left and night to the right', () => {
+    expect(pointerAction(-60, 5)).toBe('day');
+    expect(pointerAction(60, -10)).toBe('night');
+    expect(pointerAction(100, -50)).toBe('night');
+    // Not far enough, or more up than sideways: the usual meanings.
+    expect(pointerAction(50, 0)).toBe('activity');
+    expect(pointerAction(60, -45)).toBe('next');
   });
 });

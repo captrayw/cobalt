@@ -15,6 +15,8 @@ export interface Settings {
   volumeDb: number;
   /** Show the note and color name on each page. */
   pageDetails: boolean;
+  /** Owner change (Oct 2026): the feed's night colors (Evening mode). Swiping sideways in a session switches it. */
+  night: boolean;
   reducedMotion: MotionSetting;
   theme: ThemeSetting;
 }
@@ -23,6 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   useMemory: true,
   volumeDb: 0,
   pageDetails: false,
+  night: false,
   reducedMotion: 'system',
   theme: 'system',
 };
@@ -43,6 +46,8 @@ export interface SessionRecordDoc {
   linger: boolean;
   /** The page as shown, so an unfinished checkpoint can still be scored and learned. */
   item: Page;
+  /** Shown in night colors. Missing in sessions from before night colors existed. */
+  night?: boolean;
 }
 
 export type SessionStatus = 'open' | 'done' | 'partial';

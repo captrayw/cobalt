@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react';
 import { navigate } from './router';
 
 export function formatClock(seconds: number): string {
@@ -161,6 +161,31 @@ export function Stat({ label, value }: { label: string; value: ReactNode }) {
       <span className="label">{label}</span>
       <span className="stat-value">{value}</span>
     </div>
+  );
+}
+
+/** A card heading with its pigment marker, as on the website: a color, or the calm-arc bar. */
+export function CardHead({ id, chip, children }: { id: string; chip: string | 'arc'; children: ReactNode }) {
+  return (
+    <div className="card-head">
+      {chip === 'arc' ? (
+        <span className="chip chip-arc" aria-hidden="true" />
+      ) : (
+        <span className="chip" style={{ '--chip': chip } as CSSProperties} aria-hidden="true" />
+      )}
+      <h2 id={id}>{children}</h2>
+    </div>
+  );
+}
+
+/** The seven groups as one small strip of swatches, for a row's right-hand side. */
+export function MiniArc({ colors }: { colors: readonly { name: string; hex: string }[] }) {
+  return (
+    <span className="mini-arc" aria-hidden="true">
+      {colors.map((c) => (
+        <span key={c.name} style={{ background: c.hex }} />
+      ))}
+    </span>
   );
 }
 

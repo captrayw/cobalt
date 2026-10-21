@@ -41,6 +41,8 @@ export interface FeedSetup {
   useMemory: boolean;
   /** Memory as it was when the session started (null with the switch off), for pace slicing. */
   memory: Memory | null;
+  /** Start in night colors. */
+  night: boolean;
 }
 
 export interface FeedHooks {
@@ -69,6 +71,7 @@ const toRecordDoc = (r: DwellRecord): SessionRecordDoc => ({
   z: null,
   linger: false,
   item: r.item,
+  night: r.night ?? false,
 });
 
 const sameView = (a: FeedView, b: FeedView): boolean =>
@@ -108,7 +111,7 @@ export class FeedController {
     this.now = deps.now ?? (() => performance.now());
     this.wallNow = deps.wallNow ?? (() => Date.now());
     this.wake = deps.wakeLock ?? new WakeLockManager();
-    this.s = createFeedState(setup.session, setup.mode);
+    this.s = createFeedState(setup.session, setup.mode, setup.night);
     this.view = this.computeView();
   }
 
@@ -139,6 +142,11 @@ export class FeedController {
 
   setVolume(db: number): void {
     this.engine.setVolume(db);
+  }
+
+  /** Day or night colors from now on. The screen paints them; the records note them. */
+  setNight(night: boolean): void {
+    this.dispatch({ type: 'night', at: this.now(), night });
   }
 
   next = (): void => {

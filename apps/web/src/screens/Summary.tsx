@@ -1,14 +1,20 @@
-import { useEffect } from 'react';
+import { eveningColor, readableInk, relativeLuminance } from '@calm/core';
+import { useEffect, type CSSProperties } from 'react';
 import { navigate } from '../router';
 import { startSession, useApp } from '../store';
 import type { SessionRecordDoc } from '../storage/types';
 import { formatClock, Screen, Stat } from '../ui';
 
+/** One watched page, in the colors it was shown in: its own by day, its night color by night. */
 export function PageTile({ rec }: { rec: SessionRecordDoc }) {
   const p = rec.item;
+  const shown = rec.night ? eveningColor(p) : { hex: p.hex, name: p.catName };
+  const ink = readableInk(shown.hex);
+  // Marks sit on a veil that pushes away from the ink: lighter under dark ink, darker under light.
+  const veil = relativeLuminance(ink) > 0.5 ? 'rgb(0 0 0 / 0.3)' : 'rgb(255 255 255 / 0.4)';
   return (
-    <article className="tile" data-lingered={rec.linger} data-memory={p.memKey ? 'true' : undefined}>
-      <div className="tile-color" style={{ background: p.hex }}>
+    <article className="tile" data-lingered={rec.linger} data-memory={p.memKey ? 'true' : undefined} data-night={rec.night ? 'true' : undefined}>
+      <div className="tile-color" style={{ background: shown.hex, '--page-ink': ink, '--mark-veil': veil } as CSSProperties}>
         <span className="tile-note">{p.note}</span>
         <span className="tile-marks">
           {rec.linger && <span className="mark">Lingered</span>}
@@ -17,7 +23,7 @@ export function PageTile({ rec }: { rec: SessionRecordDoc }) {
         </span>
       </div>
       <div className="tile-body">
-        <strong>{p.catName}</strong>
+        <strong>{shown.name}</strong>
         <span className="muted">
           Group {p.phase} · {p.phaseName}
         </span>

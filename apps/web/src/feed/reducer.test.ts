@@ -53,6 +53,22 @@ describe('feed reducer', () => {
     expect(r.state.timer).toEqual({ kind: 'dwell', at: p.dwell * 1000 });
   });
 
+  it('switching to night changes no timer, sound or page, and each record notes its colors', () => {
+    const r = new Replay();
+    r.send({ type: 'start', gesture: true });
+    r.wait(2000);
+    const before = { timer: r.state.timer, index: r.state.index, status: r.state.status };
+    const { effects } = r.send({ type: 'night', night: true });
+    expect(effects).toEqual([]);
+    expect({ timer: r.state.timer, index: r.state.index, status: r.state.status }).toEqual(before);
+    expect(r.send({ type: 'night', night: true }).state).toBe(r.state);
+    r.send({ type: 'next' });
+    r.wait(1000);
+    r.send({ type: 'night', night: false });
+    r.send({ type: 'end' });
+    expect(r.state.records.map((rec) => rec.night)).toEqual([true, false]);
+  });
+
   it('opening the app starts the colors without a gesture; audio waits for the first touch', () => {
     const r = new Replay();
     const { effects } = r.send({ type: 'start', gesture: false });

@@ -1,4 +1,4 @@
-import { baseL, CHROMA, FAMILY_BY_ID, fitChroma, GROUPS, oklchToHex } from '@calm/core';
+import { baseL, CHROMA, eveningArc, FAMILY_BY_ID, fitChroma, GROUPS, oklchToHex } from '@calm/core';
 
 /** One color per group at its center: the group's main family, lightness and chroma. */
 export const ARC = GROUPS.map((g) => {
@@ -9,3 +9,6 @@ export const ARC = GROUPS.map((g) => {
     L = baseL(tn);
   return { name: g.name, hex: oklchToHex(L, fitChroma(L, CHROMA.start + (CHROMA.end - CHROMA.start) * tn, h), h) };
 });
+
+/** The same seven groups in their night colors, dimming toward the end. */
+export const NIGHT_ARC = eveningArc().map((c, i) => ({ name: GROUPS[i].name, hex: c.hex }));

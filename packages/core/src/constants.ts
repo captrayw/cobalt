@@ -103,7 +103,31 @@ export const INPUT = {
   advanceGapMs: 400,
   wheelLineScale: 16,
   wheelPageScale: 400,
+  /** Owner change (Oct 2026): a swipe sideways of more than this, mostly sideways, switches day and night. */
+  sideSwipePx: 50,
+  /** Sideways movement must exceed this multiple of the vertical movement. */
+  sideSwipeRatio: 1.5,
 } as const;
+/**
+ * Owner change (Oct 2026): Evening mode, from milestone 7 of the brief, for the feed's night colors.
+ * The prototype's Sequence B, evening ambient lighting: one warm color per group with no blue or
+ * cyan, each at a falling intensity, so dimming replaces falling chroma as the main lever. The sound
+ * is the same by day and by night.
+ */
+export const EVENING = [
+  { name: 'Warm white', hex: '#FFD6A5', intensity: 1 },
+  { name: 'Amber', hex: '#FFAC2E', intensity: 0.7 },
+  { name: 'Soft rose', hex: '#FF8C80', intensity: 0.55 },
+  { name: 'Pale gold', hex: '#F4D35E', intensity: 0.4 },
+  { name: 'Dim sage', hex: '#ACD472', intensity: 0.25 },
+  { name: 'Very warm white', hex: '#FFB46B', intensity: 0.15 },
+  { name: 'Deep red', hex: '#E5382E', intensity: 0.05 },
+] as const;
+/**
+ * How night colors vary and what they must avoid: pages in a group differ by up to `hueSpreadDeg`,
+ * following where the day color sits in its family; no hue may fall in the blue-and-cyan range.
+ */
+export const EVENING_TUNING = { hueSpreadDeg: 6, blueCyanDeg: [160, 300] } as const;
 /** Safety floor: every page is planned for at least this long in any mode. */
 export const MIN_PAGE_SEC = 2;
 /**
@@ -174,4 +198,6 @@ export const SIM = {
 
 // Display
 export const PAGE_INK = '#0B0E14';
+/** Owner change (Oct 2026): text on the dark pages of a night session. */
+export const LIGHT_PAGE_INK = '#F6F1E7';
 export const MIN_INK_CONTRAST = 4.5;
