@@ -8,7 +8,7 @@ The brief lists four decisions to confirm before milestone 1. Until the owner sa
 
 | Decision | Default used |
 |---|---|
-| Product name and icon | "cobalt" (owner change 7; the working name was "Calm Scroll"); an icon drawn from the arc itself (`apps/web/scripts/make-icons.mjs`). |
+| Product name and icon | "cobalt" (owner change 7; the working name was "Calm Scroll"); the A Color Company calm-arc mark as the icon (owner change 9, `apps/web/scripts/make-icons.mjs`). |
 | App-store distribution | Not in version 1: no Capacitor shell. |
 | Cloud sync (milestone 6) | Not built. |
 | Evening mode and research mode (milestone 7) | Not built. |
@@ -37,6 +37,7 @@ After trying version 1, the owner asked for these changes. They take precedence 
    - *Settings:* one column of cards in the recommended order (Preview, Sound, Screen and color, Learning and memory, Bedtime, then Reset), each row a label with one line of help on the left and its control on the right. The preview shows a session's first page with the page-details setting applied and plays its note at the set volume; the volume slider plays the note as it moves. "What it learned" shows the remembered pages' colors and opens Memory. Reset memory sits last and asks for confirmation.
    - *Controls:* platform-style switches, segmented choices, a light haptic tap where the phone supports it, and the primary button in the website's outlined style with a 2 px offset shadow. Motion stays at short fades and follows the Motion setting.
    - *Left out, because the app has no such setting:* session length, pace, the warm opening stage, linger breathing on or off, a test-sound setting, haptic pulses per breath, dimming while lingering, an evening palette, a color-vision setting, the rest timer, what sound does at rest, privacy and account, "Delete data", and switching to dark mode in the evening by itself (the System theme follows the phone, which many phones switch at night).
+9. **The icon is the calm-arc mark.** As the brand guide suggests for an app icon: the mark alone, no text, on the website's warm canvas, with clear space on every side at least the bar's height. The bar carries the impasto texture, scaled with it (the header bar's noise grown with the bar, displacement about 6 per 30 px of bar height). The favicon is the flat version, the same gradient as a rounded square with no texture. Chromium, already installed for the tests, renders the icons, so the texture matches the website. An iPhone keeps the icon an app was added with, so the new one shows once cobalt is added to the home screen again.
 
 ## Milestone gates
 
