@@ -59,6 +59,17 @@ export const SCHEDULE = {
   previewMinLead: 0.02,
 } as const;
 export const MASTER_TC = { page: 0.2, rest: 8, wake: 0.5, end: 0.08, previewStop: 0.06 } as const;
+/**
+ * Addition to the brief: on a page change, tones still sounding from the previous page fade with
+ * this time constant, so quick swipes never stack voices above the first page's level.
+ */
+export const VOICE_RELEASE_TC = 0.25;
+/** Time constant for user volume changes, so a volume change is never abrupt. */
+export const VOLUME_TC = 0.05;
+/** A fading voice or drone stops after this many time constants (about -70 dB). */
+export const FADE_TCS = 8;
+/** At the end of a preview, the drones fade for this many time constants before the stop. */
+export const DRONE_FADE_TCS = 5;
 export const CLOSE_AFTER_SEC = { end: 0.5, preview: 0.45 } as const;
 
 // Linger rhythm

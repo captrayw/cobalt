@@ -1,0 +1,222 @@
+import { generateValid, lingerCycle, PACE_PRESETS, type Session } from '@calm/core';
+import { describe, expect, it } from 'vitest';
+import { createFeedState, dwellSec, reduce } from './reducer';
+import type { FeedEffect, FeedEvent, FeedState } from './types';
+
+const session: Session = generateValid({ seed: 15, ...PACE_PRESETS.standard });
+
+/** An event without its timestamp; Replay stamps it with the fake clock. */
+type Untimed = FeedEvent extends infer E ? (E extends FeedEvent ? Omit<E, 'at'> & { at?: number } : never) : never;
+
+/** Replays events against the reducer with a fake clock, firing due timers in order. */
+class Replay {
+  state: FeedState;
+  effects: FeedEffect[] = [];
+  clock = 0;
+
+  constructor(mode: 'gradual' | 'user' = 'gradual', s: Session = session) {
+    this.state = createFeedState(s, mode);
+  }
+
+  send(event: Untimed) {
+    const step = reduce(this.state, { ...event, at: event.at ?? this.clock } as FeedEvent);
+    this.state = step.state;
+    this.effects.push(...step.effects);
+    return step;
+  }
+
+  /** Advance the clock by ms, firing every timer that falls due. */
+  wait(ms: number) {
+    const until = this.clock + ms;
+    while (this.state.timer && this.state.timer.at <= until) {
+      this.clock = this.state.timer.at;
+      this.send({ type: 'timer', kind: this.state.timer.kind });
+    }
+    this.clock = until;
+  }
+
+  page() {
+    return this.state.session.items[this.state.index];
+  }
+}
+
+describe('feed reducer', () => {
+  it('starts on page 1: unlocks audio, plays the page tone and schedules the planned dwell', () => {
+    const r = new Replay();
+    const { effects } = r.send({ type: 'start' });
+    expect(r.state.status).toBe('showing');
+    expect(r.state.index).toBe(0);
+    expect(effects[0]).toEqual({ type: 'unlockAudio' });
+    const p = session.items[0];
+    expect(effects).toContainEqual({ type: 'tone', hz: p.hz, dur: p.dwell, gainDb: p.gainDb, inhale: 0.4 });
+    expect(effects).toContainEqual({ type: 'drones', midis: p.drone, gainDb: p.gainDb });
+    expect(r.state.timer).toEqual({ kind: 'dwell', at: p.dwell * 1000 });
+  });
+
+  it('scenario 1: ↓ 14 times at 2 to 4.5 s intervals shows page 15', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    for (let i = 0; i < 14; i++) {
+      r.wait(2000 + ((i * 1700) % 2500));
+      r.send({ type: 'next' });
+    }
+    expect(r.state.index).toBe(14);
+    expect(r.state.records).toHaveLength(14);
+  });
+
+  it('scenario 2: a held page breathes; breath 1 lasts lingerCycle(dwell, 1), five breaths within 60 s', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(session.items[0].dwell * 1000);
+    expect(r.state.status).toBe('lingering');
+    r.wait(60_000);
+    const [b1, b2] = r.state.breaths;
+    expect(Math.abs((b2.start - b1.start) / 1000 - lingerCycle(session.items[0].dwell, 1, 'gradual'))).toBeLessThan(0.01);
+    expect(r.state.breath).toBeGreaterThanOrEqual(5);
+    const tones = r.effects.filter((e) => e.type === 'tone');
+    expect(tones[1]).toMatchObject({ dur: lingerCycle(session.items[0].dwell, 1, 'gradual'), inhale: 0.3875, gainDb: session.items[0].gainDb - 1 });
+  });
+
+  it('scenario 5: in "2, 5, 9 s" mode breaths last 2, 5, 9 and 9 s', () => {
+    const r = new Replay('user');
+    r.send({ type: 'start' });
+    r.wait(session.items[0].dwell * 1000 + 26_000);
+    expect(r.state.breaths.slice(0, 4).map((b) => b.dur / 1000)).toEqual([2, 5, 9, 9]);
+  });
+
+  it('scenario 6: rests after 180 s without input; ↓ moves on with sleep logged', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(200_000);
+    expect(r.state.status).toBe('resting');
+    expect(r.state.sleep).toBe(true);
+    expect(r.effects).toContainEqual({ type: 'master', target: 0.0001, tc: 8 });
+    r.send({ type: 'next' });
+    expect(r.state.status).toBe('showing');
+    expect(r.state.records[0].sleep).toBe(true);
+    expect(r.state.records[0].dwell).toBeCloseTo(200, 6);
+  });
+
+  it('activity wakes a resting page: master back to 0.9, next breath after 0.4 s, sleep stays logged', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(200_000);
+    const breathsBefore = r.state.breath;
+    r.send({ type: 'activity', gesture: true });
+    expect(r.state.status).toBe('lingering');
+    expect(r.effects.at(-1)).toEqual({ type: 'master', target: 0.9, tc: 0.5 });
+    r.wait(399);
+    expect(r.state.breath).toBe(breathsBefore);
+    r.wait(1);
+    expect(r.state.breath).toBe(breathsBefore + 1);
+    expect(r.state.sleep).toBe(true);
+  });
+
+  it('scenario 8: 300 s hidden starts no rest and stays out of the recorded dwell', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(10_000);
+    r.send({ type: 'hidden' });
+    r.wait(300_000);
+    expect(r.state.status).toBe('lingering');
+    r.send({ type: 'visible' });
+    r.wait(5_000);
+    expect(r.state.status).toBe('lingering');
+    r.send({ type: 'next' });
+    expect(r.state.records[0].dwell).toBeCloseTo(15, 6);
+    expect(r.state.records[0].sleep).toBe(false);
+  });
+
+  it('accepts at most one page advance per 400 ms', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(1000);
+    r.send({ type: 'next' });
+    r.wait(399);
+    r.send({ type: 'next' });
+    expect(r.state.index).toBe(1);
+    r.wait(1);
+    r.send({ type: 'next' });
+    expect(r.state.index).toBe(2);
+  });
+
+  it('pauses on an audio interruption and resumes on a tap; paused time is not dwell', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(2_000);
+    r.send({ type: 'interrupted' });
+    expect(r.state.status).toBe('paused');
+    expect(r.state.timer).toBeNull();
+    r.wait(30_000);
+    r.send({ type: 'activity', gesture: false });
+    expect(r.state.status).toBe('paused');
+    const { effects } = r.send({ type: 'activity', gesture: true });
+    expect(effects).toEqual([{ type: 'resumeAudio' }]);
+    expect(r.state.status).toBe('lingering');
+    r.wait(400);
+    expect(r.state.breath).toBe(1);
+    expect(dwellSec(r.state, r.clock)).toBeCloseTo(2.4, 6);
+  });
+
+  it('Next from Paused resumes audio, closes the paused span and records the page', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(3_000);
+    r.send({ type: 'interrupted' });
+    r.wait(10_000);
+    const { effects } = r.send({ type: 'next' });
+    expect(effects[0]).toEqual({ type: 'resumeAudio' });
+    expect(r.state.records[0].dwell).toBeCloseTo(3, 6);
+    expect(r.state.status).toBe('showing');
+  });
+
+  it('checkpoints every 10 pages and whenever the page is hidden', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    for (let i = 0; i < 10; i++) {
+      r.wait(1000);
+      r.send({ type: 'next' });
+    }
+    expect(r.effects.filter((e) => e.type === 'checkpoint')).toHaveLength(1);
+    r.send({ type: 'hidden' });
+    expect(r.effects.filter((e) => e.type === 'checkpoint')).toHaveLength(2);
+  });
+
+  it('End records the page on screen and finishes; the last page ends on Next', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(4_000);
+    const { effects } = r.send({ type: 'end' });
+    expect(effects).toEqual([{ type: 'finish' }]);
+    expect(r.state.status).toBe('ended');
+    expect(r.state.records).toHaveLength(1);
+    expect(r.state.records[0].dwell).toBeCloseTo(4, 6);
+    expect(r.send({ type: 'next' }).effects).toEqual([]);
+
+    const short: Session = { ...session, items: session.items.slice(0, 2) };
+    const q = new Replay('gradual', short);
+    q.send({ type: 'start' });
+    q.wait(1000);
+    q.send({ type: 'next' });
+    q.wait(1000);
+    expect(q.send({ type: 'next' }).effects).toContainEqual({ type: 'finish' });
+    expect(q.state.records).toHaveLength(2);
+  });
+
+  it('the last page lingers like any other; no timer ends the session', () => {
+    const short: Session = { ...session, items: session.items.slice(0, 1) };
+    const r = new Replay('gradual', short);
+    r.send({ type: 'start' });
+    r.wait(100_000);
+    expect(r.state.status).toBe('lingering');
+  });
+
+  it('page changes return the master to 0.9 and release the previous tones', () => {
+    const r = new Replay();
+    r.send({ type: 'start' });
+    r.wait(1000);
+    const { effects } = r.send({ type: 'next' });
+    expect(effects[0]).toEqual({ type: 'releaseVoices' });
+    expect(effects).toContainEqual({ type: 'master', target: 0.9, tc: 0.2 });
+  });
+});

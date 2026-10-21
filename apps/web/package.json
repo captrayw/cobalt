@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
-    "e2e": "playwright test"
+    "e2e": "playwright test --project=chromium --project=webkit && playwright test --project=perf --workers=1"
   },
   "dependencies": {
     "@calm/audio": "workspace:*",
