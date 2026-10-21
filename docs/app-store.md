@@ -128,7 +128,7 @@ colour,ambient,tones,breathing,slow,relax,unwind,bedtime,night,soothing,mindful,
 | App Privacy | **Get Started → No, we do not collect data from this app** ("Data Not Collected") |
 | Encryption | nothing to answer: the app declares that it uses no non-exempt encryption |
 
-**App Review Information:** no sign-in is needed. Add a contact name, a phone number and an email for Apple's reviewer, such as info@acolorcompany.com (they are not shown on the App Store), and these notes:
+**App Review Information:** no sign-in is needed. Add a contact name, a phone number and your own work email for Apple's reviewer (they are not shown on the App Store; the public pages keep info@acolorcompany.com), and these notes:
 
 > cobalt needs no account. It opens straight into a 15-minute session of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for the next page. Swipe right for night colors and left for day. The × at the top right ends the session and shows its summary. Sound starts with the first touch, so please turn the volume up. From Done for now, Memory shows what the app has learned and can export it through the share sheet. Everything stays on the device; the app makes no network requests.
 
