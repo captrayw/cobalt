@@ -17,12 +17,15 @@ pnpm preview        # serve the build at http://localhost:4173 (service worker o
 
 ## Put it on a phone
 
-The build in `apps/web/dist` is a static site. Any host that serves files over HTTPS works, and after the first visit the app runs offline.
+The app is published with GitHub Pages. `.github/workflows/pages.yml` builds it for a folder named after the repository and deploys it on every push to `main`, at `https://<user>.github.io/<repository>/`. Set it up once:
 
-- **At the root of a host** (for example Netlify, Cloudflare Pages, or a `<user>.github.io` site): run `pnpm build` and upload the `apps/web/dist` folder. On Netlify, you can sign in at https://app.netlify.com/drop and drag the folder onto the page.
-- **In a folder of a host** (for example a GitHub Pages project site at `https://<user>.github.io/calm-scroll/`): build with that folder as the base, `BASE_PATH=/calm-scroll/ pnpm build`, so the icons, manifest and service worker point inside it.
+1. Create an empty public repository on GitHub. On a free plan, GitHub Pages needs a public repository.
+2. In the repository, open **Settings → Pages** and set **Source** to **GitHub Actions**.
+3. Push: `git remote add origin https://github.com/<user>/<repository>.git`, then `git push -u origin main`. The first push opens a GitHub sign-in window.
 
-Then open the address on the phone and add it to the home screen: **Share → Add to Home Screen** in Safari on an iPhone, or **⋮ → Install app** in Chrome on Android. Memory stays with that address, so keep using the same one.
+When the **Deploy to GitHub Pages** run on the **Actions** tab turns green, open the address on the phone and add it to the home screen: **Share → Add to Home Screen** in Safari on an iPhone, or **⋮ → Install app** in Chrome on Android. After the first visit it works offline. Memory stays with that address, so keep using the same one.
+
+Any other static host works too. Upload `apps/web/dist` from `pnpm build` to the root of a host. To serve it from a folder instead, build with `BASE_PATH=/<folder>/`, so the icons, manifest and service worker point inside that folder.
 
 ## Repository
 
