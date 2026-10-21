@@ -121,13 +121,30 @@ function MoonIcon() {
   );
 }
 
-/** End and Next. They never change during a session, so a page change does not re-render them. */
-const FeedControls = memo(function FeedControls({ feed }: { feed: FeedController }) {
+/**
+ * End, Next, and the left and right arrows that show a swipe sideways switches day and night (and
+ * do it when tapped). They never change during a session, so a page change does not re-render them.
+ */
+const FeedControls = memo(function FeedControls({ feed, switchColors }: { feed: FeedController; switchColors: (night: boolean) => void }) {
+  const sideways = (night: boolean) => () => {
+    switchColors(night);
+    feed.activity(true);
+  };
   return (
     <>
       <button type="button" className="feed-button feed-end" aria-label="End session" onClick={feed.end}>
         <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
           <path d="M5 5l12 12M17 5L5 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </svg>
+      </button>
+      <button type="button" className="feed-button feed-day" aria-label="Day mode" onClick={sideways(false)}>
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      </button>
+      <button type="button" className="feed-button feed-night" aria-label="Night mode" onClick={sideways(true)}>
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
       </button>
       <button type="button" className="feed-button feed-next" aria-label="Next page" onClick={feed.next}>
@@ -262,7 +279,7 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
         <p className="feed-hint">Swipe up for the next page</p>
       )}
 
-      <FeedControls feed={feed} />
+      <FeedControls feed={feed} switchColors={switchColors} />
 
       {view.status === 'resting' && (
         <div className="feed-overlay">

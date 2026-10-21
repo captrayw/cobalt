@@ -31,6 +31,19 @@ test('a swipe right turns on night colors with a notice that fades, and ← brin
   await expect(page.getByRole('switch', { name: 'Night mode' })).toHaveAttribute('aria-checked', 'true');
 });
 
+test('arrows at the left and right edges show the way, and switch day and night when tapped', async ({ page }) => {
+  await page.goto('/');
+  const surface = page.locator('main.feed');
+  await expect(surface).toHaveAttribute('data-page', '1');
+  await page.getByRole('button', { name: 'Night mode' }).click();
+  await expect(page.locator('.feed-notice')).toHaveText('Night mode');
+  await expect(surface).toHaveAttribute('data-night', 'true');
+  await page.getByRole('button', { name: 'Day mode' }).click();
+  await expect(page.locator('.feed-notice')).toHaveText('Day mode');
+  await expect(surface).not.toHaveAttribute('data-night', 'true');
+  await expect(surface).toHaveAttribute('data-page', '1');
+});
+
 test('a page lingered on at night shows its night color in the summary', async ({ page }) => {
   await openWithClock(page);
   await startSession(page);

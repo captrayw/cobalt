@@ -150,9 +150,15 @@
 }
 
 .feed[data-awake='true'] .feed-button,
-.feed-button:hover,
 .feed-button:focus-visible {
   opacity: 0.92;
+}
+
+/* Only where a pointer can hover: on a phone a tapped button would otherwise stay bright. */
+@media (hover: hover) {
+  .feed-button:hover {
+    opacity: 0.92;
+  }
 }
 
 /* The accent ring plus a page-ink halo stays visible on every page color. */
@@ -171,6 +177,21 @@
   left: 50%;
   bottom: calc(max(14px, env(safe-area-inset-bottom)) + 10px);
   margin-left: -22px;
+}
+
+/* Day and night: chevrons halfway down each side, faint like Next, pointing the way a swipe goes. */
+.feed-day,
+.feed-night {
+  top: 50%;
+  margin-top: -22px;
+}
+
+.feed-day {
+  left: max(6px, env(safe-area-inset-left));
+}
+
+.feed-night {
+  right: max(6px, env(safe-area-inset-right));
 }
 
 .feed-overlay {
