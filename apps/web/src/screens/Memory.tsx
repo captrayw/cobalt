@@ -1,6 +1,7 @@
 import { groupOf, newSeed, noteName, scoreMean, simulate, type PageMemory } from '@calm/core';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { LineChart, type LineSeries } from '../charts/LineChart';
+import { inNativeApp, shareFile } from '../platform/native';
 import { reloadFromRepo, resetMemory, useApp } from '../store';
 import { applyImport, checkImport, exportAll, exportFileName, exportJson, type ExportFile, type ImportSummary } from '../storage';
 import { percent, Screen, Swatch } from '../ui';
@@ -117,13 +118,20 @@ export function MemoryScreen() {
     run(async () => {
       if (!repo) return;
       const at = Date.now();
-      const url = URL.createObjectURL(new Blob([exportJson(await exportAll(repo, at))], { type: 'application/json' }));
+      const text = exportJson(await exportAll(repo, at));
+      const done = 'Exported. The file holds your memory, sessions and settings.';
+      // The iPhone app cannot download: its share sheet offers Save to Files instead.
+      if (inNativeApp) {
+        if (await shareFile(exportFileName(at), text)) setMessage(done);
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const link = document.createElement('a');
       link.href = url;
       link.download = exportFileName(at);
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMessage('Exported. The file holds your memory, sessions and settings.');
+      setMessage(done);
     }, 'The export could not be made. Please try again.');
 
   const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {

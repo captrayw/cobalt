@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react';
+import { inNativeApp, tap } from './platform/native';
 import { navigate } from './router';
 
 export function formatClock(seconds: number): string {
@@ -65,8 +66,12 @@ export interface Choice<T extends string> {
   label: string;
 }
 
-/** A light tap on phones that have one, as instant feedback for a change. */
+/** A light tap on phones that have one, as instant feedback for a change. iPhones ignore web vibration; the iPhone app taps natively. */
 export function haptic(): void {
+  if (inNativeApp) {
+    void tap().catch(() => undefined);
+    return;
+  }
   try {
     navigator.vibrate?.(10);
   } catch {

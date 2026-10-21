@@ -16,6 +16,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
+import { inNativeApp } from './platform/native';
 import { initApp, useApp } from './store';
 
 createRoot(document.getElementById('root') as HTMLElement).render(
@@ -24,12 +25,19 @@ createRoot(document.getElementById('root') as HTMLElement).render(
   </StrictMode>,
 );
 
-void initApp();
+void initApp().then(() => {
+  // Debug builds of the iPhone app print this in the Xcode console, and in the CI simulator's log.
+  if (inNativeApp) {
+    const storage = useApp.getState().repo ? 'open' : 'unavailable';
+    console.info(`cobalt: iPhone app ready; storage ${storage}; audio session ${'audioSession' in navigator ? 'yes' : 'no'}`);
+  }
+});
 
 // Offline support: the service worker precaches the app shell and assets. A new version waits, and
 // is applied (with a reload) only between sessions while the app is in the background, so it never
-// cuts a session short. Closing every window also applies it, as usual.
-if (import.meta.env.PROD) {
+// cuts a session short. Closing every window also applies it, as usual. The iPhone app carries its
+// files inside, so it has no service worker.
+if (import.meta.env.PROD && !inNativeApp) {
   let updateWaiting = false;
   const applyUpdate = registerSW({
     immediate: true,

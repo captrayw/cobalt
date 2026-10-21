@@ -7,7 +7,7 @@
  *   node apps/web/scripts/make-icons.mjs
  * Chromium (installed for the end-to-end tests) renders the SVG, so the texture comes out exactly
  * as the browser draws it on the website. Writes PNGs to apps/web/public/icons/ and apps/web/public/,
- * plus favicon.svg.
+ * the iPhone app's 1024 px icon, and favicon.svg.
  */
 import { chromium } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -54,12 +54,14 @@ const iconDir = join(publicDir, 'icons');
 mkdirSync(iconDir, { recursive: true });
 
 // Rounded corners for the manifest's ordinary icons; full-bleed squares for maskable and Apple
-// touch use, which the phone masks itself.
+// touch use, which the phone masks itself. The iPhone app's icon is full-bleed too, and opaque, as
+// the App Store requires: a square with no transparency comes out of Chromium without an alpha channel.
 const outputs = [
   [join(iconDir, 'icon-192.png'), 192, true],
   [join(iconDir, 'icon-512.png'), 512, true],
   [join(iconDir, 'icon-maskable-512.png'), 512, false],
   [join(publicDir, 'apple-touch-icon.png'), 180, false],
+  [join(here, '../ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'), 1024, false],
 ];
 
 const browser = await chromium.launch();

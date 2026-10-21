@@ -4,7 +4,7 @@ A cobalt app by A Color Company, [acolorcompany.com](https://acolorcompany.com).
 
 A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. At night, a swipe to the right turns the colors warm and dim, with no blue, darker page by page; a swipe to the left brings the day colors back. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
 
-Version 1 is an installable progressive web app (PWA): no account, no network requests, no analytics.
+Version 1 is an installable progressive web app (PWA): no account, no network requests, no analytics. The same app also builds as an iPhone app for the App Store (below).
 
 ## Day and night
 
@@ -33,6 +33,14 @@ When the **Deploy to GitHub Pages** run on the **Actions** tab turns green, open
 
 Any other static host works too. Upload `apps/web/dist` from `pnpm build` to the root of a host. To serve it from a folder instead, build with `BASE_PATH=/<folder>/`, so the icons, manifest and service worker point inside that folder.
 
+## iPhone app
+
+The same web app runs in a native iPhone shell (Capacitor) in `apps/web/ios`: iPhone only, iOS 17 or later. Its files are inside the app, so it works offline from the first launch. It keeps the screen on during a session, keeps a swipe up from the bottom edge in the feed, taps through the Taptic Engine and saves the memory export through the share sheet. No Mac is needed: `.github/workflows/ios.yml` builds it on GitHub's macOS runners, opens it in an iPhone simulator and takes screenshots, and, run by hand, uploads it to TestFlight. [`docs/app-store.md`](docs/app-store.md) has the steps for the App Store.
+
+```bash
+pnpm --filter @calm/web ios:build   # build the web app and copy it into apps/web/ios
+```
+
 ## Repository
 
 | Path | What it holds |
@@ -40,6 +48,7 @@ Any other static host works too. Upload `apps/web/dist` from `pnpm build` to the
 | `packages/core` | Pure TypeScript rules with no DOM, audio or storage: `constants.ts` (every tunable value), `rng.ts`, `color.ts`, `model.ts`, `generate.ts`, `validate.ts` (the nine checks), `linger.ts`, `loop.ts` (scoring, learning, carry-over), `session.ts`, `simulate.ts`. It runs unchanged in Node, the browser and tests. |
 | `packages/audio` | The `AudioEngine` interface, its Web Audio implementation, a silent fallback, and the developer preview player. |
 | `apps/web` | The React app: `src/feed` (pure reducer, controller, gestures, crossfade), `src/screens`, `src/storage` (IndexedDB, zod schemas, migrations, export and import), `e2e` (Playwright). |
+| `apps/web/ios` | The iPhone app's Xcode project (Capacitor). `App/App/Cobalt.swift` holds cobalt's native plugin and view controller. |
 | `golden` | The exporter for golden-file equivalence tests against the reference code (see `golden/README.md`). |
 | `docs` | Decisions and deviations, and the loudness calibration record. |
 
@@ -62,7 +71,7 @@ If the project sits in a folder that OneDrive (or another sync tool) syncs, a bu
 
 ## Status
 
-Milestones 1 to 5 are built, and evening mode from milestone 7. Their gates pass locally, except the parts that need the reference code or real hardware (see `docs/decisions.md`). Milestone 6 (cloud sync) and research mode wait for the owner's approval.
+Milestones 1 to 5 are built, and evening mode from milestone 7. Their gates pass locally, except the parts that need the reference code or real hardware (see `docs/decisions.md`). Milestone 6 (cloud sync) and research mode wait for the owner's approval. The iPhone app builds and runs in the iPhone simulator; uploading it to TestFlight and the App Store listing wait on the owner's Apple developer account.
 
 cobalt makes no medical or therapeutic claims.
 

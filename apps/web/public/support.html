@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>cobalt: help</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --bg: #f3eee4;
+        --ink: #121014;
+        --muted: #5b5560;
+        --accent: #c4361f;
+        --rule: #e2dacb;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111014;
+          --ink: #f6f1e7;
+          --muted: #b3acb8;
+          --accent: #ff6a4d;
+          --rule: #2a272e;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 17px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      }
+      main {
+        max-width: 38rem;
+        margin: 0 auto;
+        padding: 40px 16px 56px;
+      }
+      .mark {
+        display: block;
+        width: 28px;
+        height: 11px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #d9826b, #d8b878, #8fae8b, #5e9c9a, #6f88b0, #8e80a8, #8c9bb0);
+        margin-bottom: 18px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 19px;
+        margin: 32px 0 6px;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      a {
+        color: var(--accent);
+      }
+      .lead {
+        font-size: 20px;
+      }
+      footer {
+        margin-top: 40px;
+        padding-top: 16px;
+        border-top: 1px solid var(--rule);
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="mark" aria-hidden="true"></span>
+      <h1>cobalt help</h1>
+      <p class="lead">Questions, problems or ideas: <a href="https://github.com/captrayw/cobalt/issues">open an issue on GitHub</a>.</p>
+
+      <h2>A session</h2>
+      <p>
+        cobalt opens straight into fifteen minutes of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for
+        the next page. Stay on a page and it starts to breathe. Tap the × at the top right to end the session and see its summary.
+      </p>
+
+      <h2>No sound?</h2>
+      <p>
+        The sound starts with your first touch, so tap or swipe once. Then turn the volume up with the buttons on the side of the phone.
+        The Settings screen has its own volume slider, and a button that plays a note.
+      </p>
+
+      <h2>Day and night</h2>
+      <p>
+        In a session, swipe right for night: warm, dim colors with no blue, a little darker page by page. Swipe left for day. The
+        choice is kept for later sessions, and Settings has it too, under Screen and color.
+      </p>
+
+      <h2>Moving to a new phone</h2>
+      <p>
+        On the Memory screen, Export saves one file with your memory, sessions and settings. On the new phone, Import on the same screen
+        reads it back.
+      </p>
+
+      <h2>Privacy</h2>
+      <p>cobalt collects nothing and keeps everything on your device. <a href="privacy.html">The privacy policy</a> has the details.</p>
+
+      <footer>© 2026 A Color Company. All rights reserved.</footer>
+    </main>
+  </body>
+</html>

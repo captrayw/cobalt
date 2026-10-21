@@ -9,7 +9,7 @@ The brief lists four decisions to confirm before milestone 1. Until the owner sa
 | Decision | Default used |
 |---|---|
 | Product name and icon | "cobalt" (owner change 7; the working name was "Calm Scroll"); the A Color Company calm-arc mark as the icon (owner change 9, `apps/web/scripts/make-icons.mjs`). |
-| App-store distribution | Not in version 1: no Capacitor shell. |
+| App-store distribution | An iPhone app in a Capacitor shell (owner change 11). It builds and runs in the iPhone simulator; TestFlight and the App Store listing wait on the owner's Apple developer account. |
 | Cloud sync (milestone 6) | Not built. |
 | Evening mode and research mode (milestone 7) | Not built. |
 
@@ -46,6 +46,11 @@ After trying version 1, the owner asked for these changes. They take precedence 
     - *Records:* each watched page notes whether it was shown at night, so the summary shows the colors that were seen. Learning still uses the pages as planned: their families and notes.
     - *Done screen:* a "Day and night" card explains both modes with their arcs, and Start a session sits at the bottom of the screen. The arc strip that was there is gone, since the card shows both arcs.
     - Research mode, the other half of milestone 7, is not built.
+11. **iPhone app for the App Store.** The owner asked to put cobalt on the App Store. The same web app, built with base '/', runs in a native shell (Capacitor 8 with Swift Package Manager, `apps/web/ios`, bundle ID `com.acolorcompany.cobalt`). Its files are inside the app, so it works offline from the first launch and needs no service worker; updates come through the App Store.
+    - *Scope:* iPhone only, iOS 17 or later (for the CSS and the audio session the web app uses), portrait, with the status bar hidden. The launch screen is the app's own background, light or dark, with no logo splash. The icon is the calm-arc mark at 1024 px, opaque, from `make-icons.mjs`.
+    - *Native touches:* a small plugin (`ios/App/App/Cobalt.swift`) does what an app's web view cannot. While pages show, it keeps the screen on (the web's wake lock is not dependable there) and gives the bottom edge's first swipe to the feed, so a swipe up from the very bottom turns the page instead of leaving the app. The home indicator fades until the screen is touched (Capacitor's SystemBars, which also keeps the status bar hidden). It taps through the Taptic Engine where the web app would vibrate, which iPhones ignore on the web, and it offers the memory export through the share sheet (Save to Files), since the web view cannot download. Links such as acolorcompany.com open in Safari.
+    - *Build and upload:* `.github/workflows/ios.yml` builds on GitHub's macOS runners, so no Mac is needed. It opens the app in the largest iPhone simulator, checks that the web app started and its storage opened, and takes screenshots, which it pushes to the `ios-ci` branch. Run by hand, it archives unsigned, signs on export with Apple's cloud-managed distribution certificate using an App Store Connect API key from the repository's secrets, and uploads to TestFlight. `docs/app-store.md` has the owner's steps and the listing.
+    - *Name:* the App Store already has an app called "Cobalt", and store names are unique, so the listing needs a longer name such as "cobalt: calm color". The name under the icon stays "cobalt".
 
 ## Milestone gates
 
