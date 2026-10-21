@@ -123,13 +123,26 @@ function MoonIcon() {
 
 /**
  * End, Next, and the left and right arrows that show a swipe sideways switches day and night (and
- * do it when tapped). They never change during a session, so a page change does not re-render them.
+ * do it when tapped). The arrows are hints: each fades out once its gesture has been used (`learned`),
+ * yet stays a button for screen readers and shows again when focused from the keyboard. They change
+ * only then, so a page change does not re-render them.
  */
-const FeedControls = memo(function FeedControls({ feed, switchColors }: { feed: FeedController; switchColors: (night: boolean) => void }) {
+const FeedControls = memo(function FeedControls({
+  feed,
+  switchColors,
+  learnedNext,
+  learnedSideways,
+}: {
+  feed: FeedController;
+  switchColors: (night: boolean) => void;
+  learnedNext: boolean;
+  learnedSideways: boolean;
+}) {
   const sideways = (night: boolean) => () => {
     switchColors(night);
     feed.activity(true);
   };
+  const side = learnedSideways ? ' is-learned' : '';
   return (
     <>
       <button type="button" className="feed-button feed-end" aria-label="End session" onClick={feed.end}>
@@ -137,17 +150,17 @@ const FeedControls = memo(function FeedControls({ feed, switchColors }: { feed: 
           <path d="M5 5l12 12M17 5L5 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
         </svg>
       </button>
-      <button type="button" className="feed-button feed-day" aria-label="Day mode" onClick={sideways(false)}>
+      <button type="button" className={`feed-button feed-day${side}`} aria-label="Day mode" onClick={sideways(false)}>
         <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
       </button>
-      <button type="button" className="feed-button feed-night" aria-label="Night mode" onClick={sideways(true)}>
+      <button type="button" className={`feed-button feed-night${side}`} aria-label="Night mode" onClick={sideways(true)}>
         <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
       </button>
-      <button type="button" className="feed-button feed-next" aria-label="Next page" onClick={feed.next}>
+      <button type="button" className={`feed-button feed-next${learnedNext ? ' is-learned' : ''}`} aria-label="Next page" onClick={feed.next}>
         <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M5 9l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
@@ -160,6 +173,8 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   const view = useSyncExternalStore(feed.subscribe, feed.getView);
   const pageDetails = useApp((s) => s.settings.pageDetails);
   const night = useApp((s) => s.settings.night);
+  const learnedNext = useApp((s) => s.settings.learnedNext);
+  const learnedSideways = useApp((s) => s.settings.learnedSideways);
   const reduced = useReducedMotion();
   const surface = useRef<HTMLElement>(null);
   const crossfade = useRef<ColorCrossfade | null>(null);
@@ -189,7 +204,8 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   const [notice, setNotice] = useState<{ id: number; night: boolean } | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const switchColors = useCallback((toNight: boolean) => {
-    void updateSettings({ night: toNight });
+    // The first switch also retires the side arrows' hint.
+    void updateSettings(useApp.getState().settings.learnedSideways ? { night: toNight } : { night: toNight, learnedSideways: true });
     setNotice((n) => ({ id: (n?.id ?? 0) + 1, night: toNight }));
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(null), NOTICE_MS);
@@ -210,6 +226,11 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
 
   // The records note which colors each page was shown in.
   useEffect(() => feed.setNight(night), [feed, night]);
+
+  // Pages only change when the person moves on, so leaving page 1 retires the down arrow's hint.
+  useEffect(() => {
+    if (view.index > 0 && !learnedNext) void updateSettings({ learnedNext: true });
+  }, [view.index, learnedNext]);
 
   // The color on screen, the page's own or its night color, with an ink that stays readable on it.
   const { page } = view;
@@ -279,7 +300,7 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
         <p className="feed-hint">Swipe up for the next page</p>
       )}
 
-      <FeedControls feed={feed} switchColors={switchColors} />
+      <FeedControls feed={feed} switchColors={switchColors} learnedNext={learnedNext} learnedSideways={learnedSideways} />
 
       {view.status === 'resting' && (
         <div className="feed-overlay">

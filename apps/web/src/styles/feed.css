@@ -161,6 +161,12 @@
   }
 }
 
+/* An arrow whose gesture has been used fades out for good, even when the controls wake. It stays
+   a button for screen readers and shows again when reached from the keyboard. */
+.feed .feed-button.is-learned:not(:focus-visible) {
+  opacity: 0;
+}
+
 /* The accent ring plus a page-ink halo stays visible on every page color. */
 .feed-button:focus-visible {
   outline: 2px solid var(--accent);

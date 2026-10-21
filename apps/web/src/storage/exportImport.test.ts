@@ -33,7 +33,16 @@ describe('export and import', () => {
     expect(file.sessions.map((s) => s.startedAt)).toEqual([T0, T0 + 1_000_000, T0 + 2_000_000]);
     expect(file.sessions.every((s) => s.status === 'done')).toBe(true);
     expect(file.memory).toEqual(await repo.loadMemory());
-    expect(file.settings).toEqual({ volumeDb: -9.5, pageDetails: true, night: false, theme: 'light', reducedMotion: 'reduce', useMemory: false });
+    expect(file.settings).toEqual({
+      volumeDb: -9.5,
+      pageDetails: true,
+      night: false,
+      theme: 'light',
+      reducedMotion: 'reduce',
+      useMemory: false,
+      learnedNext: false,
+      learnedSideways: false,
+    });
   });
 
   it('an exported file imports back unchanged', async () => {

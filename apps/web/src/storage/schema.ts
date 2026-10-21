@@ -139,6 +139,8 @@ export const SettingsSchema = z.object({
   night: z.boolean(),
   reducedMotion: z.enum(['system', 'reduce', 'allow']),
   theme: z.enum(['system', 'dark', 'light']),
+  learnedNext: z.boolean(),
+  learnedSideways: z.boolean(),
 }) satisfies z.ZodType<Settings>;
 
 export const SnapshotDocSchema: z.ZodType<SnapshotDoc> = z.object({

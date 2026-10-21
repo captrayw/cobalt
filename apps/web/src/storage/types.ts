@@ -19,6 +19,13 @@ export interface Settings {
   night: boolean;
   reducedMotion: MotionSetting;
   theme: ThemeSetting;
+  /**
+   * Owner change (Oct 2026): the feed's arrows are hints. Once the person has moved on to a next
+   * page, the down arrow stays out of sight; once they have switched day and night, so do the side
+   * arrows. Kept here so the hints do not come back each session; not shown in Settings.
+   */
+  learnedNext: boolean;
+  learnedSideways: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -28,6 +35,8 @@ export const DEFAULT_SETTINGS: Settings = {
   night: false,
   reducedMotion: 'system',
   theme: 'system',
+  learnedNext: false,
+  learnedSideways: false,
 };
 
 /** One watched page in a stored session. */

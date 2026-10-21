@@ -10,6 +10,8 @@ test('opening the app goes straight into the feed, and sound waits for the first
   await expect(hint).toBeVisible();
   // No audio context before a gesture: browsers would block it.
   expect((await feed(page))!.audio).toBe('idle');
+  // The feed takes focus right after its input listeners are attached.
+  await expect(surface).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(surface).toHaveAttribute('data-page', '2');
   await expect(hint).toBeHidden();
