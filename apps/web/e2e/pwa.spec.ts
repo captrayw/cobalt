@@ -8,7 +8,9 @@ test.describe('installable, offline and private', () => {
     const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
     expect(manifestHref).toBeTruthy();
     const manifest = await (await page.request.get(manifestHref!)).json();
-    expect(manifest).toMatchObject({ name: 'Calm Scroll', display: 'standalone', start_url: '/' });
+    expect(manifest).toMatchObject({ name: 'cobalt', short_name: 'cobalt', display: 'standalone', start_url: '/' });
+    await expect(page).toHaveTitle('cobalt');
+    await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'cobalt');
     for (const icon of manifest.icons) expect((await page.request.get(icon.src)).ok(), icon.src).toBe(true);
 
     await page.evaluate(async () => {

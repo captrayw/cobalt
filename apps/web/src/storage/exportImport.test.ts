@@ -113,27 +113,27 @@ describe('export and import', () => {
       expect(check.ok).toBe(false);
       return check.ok ? '' : check.error;
     };
-    expect(reject('{ not json')).toBe('This file could not be read. Choose a Calm Scroll export, saved as .json.');
-    expect(reject('[1, 2, 3]')).toBe('This file is not a Calm Scroll export.');
-    expect(reject(JSON.stringify({ ...file, app: 'other-app' }))).toBe('This file is not a Calm Scroll export.');
-    expect(reject(JSON.stringify({ ...file, schema: 2 }))).toBe('This file comes from a newer version of Calm Scroll.');
+    expect(reject('{ not json')).toBe('This file could not be read. Choose a cobalt export, saved as .json.');
+    expect(reject('[1, 2, 3]')).toBe('This file is not a cobalt export.');
+    expect(reject(JSON.stringify({ ...file, app: 'other-app' }))).toBe('This file is not a cobalt export.');
+    expect(reject(JSON.stringify({ ...file, schema: 2 }))).toBe('This file comes from a newer version of cobalt.');
 
     const [firstKey] = Object.keys(file.memory.pages);
     const badPages = { ...file.memory.pages, [firstKey]: { ...file.memory.pages[firstKey], a: 'lots' } };
     const badMemory = reject(JSON.stringify({ ...file, memory: { ...file.memory, pages: badPages } }));
-    expect(badMemory).toMatch(/^This file has data Calm Scroll cannot use\. The memory is not valid \(pages\..+\.a: /);
+    expect(badMemory).toMatch(/^This file has data cobalt cannot use\. The memory is not valid \(pages\..+\.a: /);
 
     const badSession = reject(JSON.stringify({ ...file, sessions: [{ ...file.sessions[0], status: 'lost' }] }));
-    expect(badSession).toMatch(/^This file has data Calm Scroll cannot use\. The session is not valid \(status: /);
+    expect(badSession).toMatch(/^This file has data cobalt cannot use\. The session is not valid \(status: /);
 
     const badSetting = reject(JSON.stringify({ ...file, settings: { ...file.settings, volumeDb: 12 } }));
-    expect(badSetting).toMatch(/^This file has data Calm Scroll cannot use\. The file is not valid \(settings\.volumeDb: /);
+    expect(badSetting).toMatch(/^This file has data cobalt cannot use\. The file is not valid \(settings\.volumeDb: /);
 
     expect(reject(JSON.stringify({ ...file, memory: undefined }))).toMatch(/The memory is not a document/);
     for (const message of [badMemory, badSession, badSetting]) expect(message.length).toBeLessThanOrEqual(190);
   });
 
   it('names export files by local date', () => {
-    expect(exportFileName(new Date(2026, 9, 21, 8, 30).getTime())).toBe('calm-scroll-2026-10-21.json');
+    expect(exportFileName(new Date(2026, 9, 21, 8, 30).getTime())).toBe('cobalt-2026-10-21.json');
   });
 });

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Calm Scroll audio engine: the AudioEngine interface and its Web Audio implementation.",
+  "description": "cobalt audio engine: the AudioEngine interface and its Web Audio implementation.",
   "exports": {
     ".": "./src/index.ts"
   },

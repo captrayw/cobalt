@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Calm Scroll: a phone-first feed of full-screen colors and soft tones that slows into a breathing rhythm.",
+  "description": "cobalt: a phone-first feed of full-screen colors and soft tones that slows into a breathing rhythm.",
   "packageManager": "pnpm@12.14.0",
   "engines": {
     "node": ">=22"

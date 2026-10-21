@@ -36,7 +36,7 @@ test('export, reset and import through the Memory screen bring memory back', asy
   await expect(page.getByTestId('memory-page')).toHaveCount(1);
 
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export' }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^calm-scroll-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(download.suggestedFilename()).toMatch(/^cobalt-\d{4}-\d{2}-\d{2}\.json$/);
   const text = await readFile((await download.path())!, 'utf8');
   expect(JSON.parse(text)).toMatchObject({ app: 'calm-scroll', schema: 1 });
 

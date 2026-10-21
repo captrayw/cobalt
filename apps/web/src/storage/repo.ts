@@ -49,20 +49,20 @@ const byStartedAt = (a: SessionDoc, b: SessionDoc) => a.startedAt - b.startedAt 
 
 function parseOrThrow<T>(schema: z.ZodType<T>, doc: unknown, what: string): T {
   const result = schema.safeParse(doc);
-  if (!result.success) throw new Error(`Calm Scroll did not save the ${what}: ${describeIssue(result.error)}`);
+  if (!result.success) throw new Error(`cobalt did not save the ${what}: ${describeIssue(result.error)}`);
   return result.data;
 }
 
 function warnIfLarge(memory: Memory): void {
   const bytes = new TextEncoder().encode(JSON.stringify(memory)).length;
-  if (bytes > MEMORY_SIZE_LIMIT) console.warn(`Calm Scroll: memory is ${bytes} bytes, above the ${MEMORY_SIZE_LIMIT}-byte budget.`);
+  if (bytes > MEMORY_SIZE_LIMIT) console.warn(`cobalt: memory is ${bytes} bytes, above the ${MEMORY_SIZE_LIMIT}-byte budget.`);
 }
 
 function readSession(raw: unknown): SessionDoc | null {
   try {
     return migrateSession(raw);
   } catch (error) {
-    console.warn('Calm Scroll: skipped a stored session that could not be read.', error);
+    console.warn('cobalt: skipped a stored session that could not be read.', error);
     return null;
   }
 }
@@ -73,7 +73,7 @@ function readMemory(raw: unknown): { memory: Memory; migrated: boolean; unreadab
   try {
     return { memory: migrateMemory(raw), migrated: needsMigration(raw), unreadable: false };
   } catch (error) {
-    console.warn('Calm Scroll: stored memory could not be read.', error);
+    console.warn('cobalt: stored memory could not be read.', error);
     return { memory: emptyMemory(), migrated: false, unreadable: true };
   }
 }
@@ -220,7 +220,7 @@ export function createRepo(name: string = DB_NAME, factory?: IDBFactory): CalmRe
         try {
           snaps.push(migrateSnapshot(row));
         } catch (error) {
-          console.warn('Calm Scroll: skipped a snapshot that could not be read.', error);
+          console.warn('cobalt: skipped a snapshot that could not be read.', error);
         }
       }
       return snaps.sort((a, b) => b.at - a.at);

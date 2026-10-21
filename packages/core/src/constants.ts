@@ -1,5 +1,5 @@
 /**
- * Every tunable value in Calm Scroll, with the defaults from the build brief.
+ * Every tunable value in cobalt, with the defaults from the build brief.
  * Do not change a value here without the owner's approval; propose each change with its evidence.
  */
 

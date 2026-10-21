@@ -1,4 +1,6 @@
-# Calm Scroll
+# cobalt
+
+A cobalt app by a color company, [acolorcompany.com](https://acolorcompany.com).
 
 A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
 
@@ -58,4 +60,6 @@ If the project sits in a folder that OneDrive (or another sync tool) syncs, a bu
 
 Milestones 1 to 5 are built. Their gates pass locally, except the parts that need the reference code or real hardware (see `docs/decisions.md`). Milestones 6 (cloud sync) and 7 (evening and research modes) wait for the owner's approval.
 
-Calm Scroll is a relaxation aid. It makes no medical or therapeutic claims.
+cobalt makes no medical or therapeutic claims.
+
+© 2026 a color company. All rights reserved.

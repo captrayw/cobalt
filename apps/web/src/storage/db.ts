@@ -1,7 +1,10 @@
 import { wrap, type DBSchema, type IDBPDatabase } from 'idb';
 import type { SessionDoc, SnapshotDoc } from './types';
 
-/** IndexedDB database for everything Calm Scroll keeps on the device. */
+/**
+ * IndexedDB database for everything cobalt keeps on the device. Its name is from before the app
+ * was renamed and must stay: a new name would open an empty database and leave the stored data behind.
+ */
 export const DB_NAME = 'calm-scroll';
 export const DB_VERSION = 1;
 

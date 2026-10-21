@@ -8,7 +8,7 @@ The brief lists four decisions to confirm before milestone 1. Until the owner sa
 
 | Decision | Default used |
 |---|---|
-| Product name and icon | "Calm Scroll"; an icon drawn from the arc itself (`apps/web/scripts/make-icons.mjs`). |
+| Product name and icon | "cobalt" (owner change 7; the working name was "Calm Scroll"); an icon drawn from the arc itself (`apps/web/scripts/make-icons.mjs`). |
 | App-store distribution | Not in version 1: no Capacitor shell. |
 | Cloud sync (milestone 6) | Not built. |
 | Evening mode and research mode (milestone 7) | Not built. |
@@ -30,6 +30,7 @@ After trying version 1, the owner asked for these changes. They take precedence 
 4. **No pace or linger rhythm settings.** Every session uses the 5 to 10 s pace and the gradual rhythm. The core keeps the 12 to 24 s pace and the "2, 5, 9 s" rhythm, so the developer screen and the reducer's scenario 5 test still cover them, but the app no longer offers them. Rows an older version stored for them are skipped, and older export files still import without them. Scenario 5 now runs only as that unit test.
 5. **No disclaimer.** The "relaxation aid" line is gone from the Done screen, About and the page description. The app still makes no medical or therapeutic claims.
 6. **About names the maker.** It reads "a cobalt app by a color company", links to acolorcompany.com and ends with "© 2026 a color company. All rights reserved.", over a cobalt glow that breathes once every 10 s and holds still under reduced motion. The research summary and source list that About held are no longer in the app; they remain in the brief.
+7. **The app is named cobalt.** The home-screen name, the browser tab, the install manifest, the app's messages and the export file name (`cobalt-2026-10-21.json`) all say cobalt. Four things keep the old name on purpose: the database on the device (`calm-scroll`), because a new name would open an empty one and leave stored memory behind; the export format tag, so every export reads back; the web address, which follows the GitHub repository's name; and the code's package names. An iPhone keeps the name an icon was added with, so the new name shows once the app is added to the home screen again.
 
 ## Milestone gates
 

@@ -35,7 +35,7 @@ function runMigrations(doc: unknown, steps: Readonly<Record<number, Migration>>,
   let current = doc;
   let v = docVersion(current);
   if (!Number.isInteger(v) || v < 0) throw new MigrationError(`The ${what} has an unknown version.`);
-  if (v > DOC_VERSION) throw new MigrationError(`The ${what} was saved by a newer version of Calm Scroll.`);
+  if (v > DOC_VERSION) throw new MigrationError(`The ${what} was saved by a newer version of cobalt.`);
   while (v < DOC_VERSION) {
     const step = steps[v];
     if (!step) throw new MigrationError(`There is no migration for ${what} version ${v}.`);
@@ -116,7 +116,7 @@ export function migrateSnapshot(doc: unknown): SnapshotDoc {
 /** A stored setting row. Before versioning a row was the bare value itself. */
 export function migrateSettingRow(name: string, raw: unknown): SettingRow {
   if (!isRecord(raw) || !('v' in raw)) return { v: 1, name, value: raw };
-  if (docVersion(raw) > DOC_VERSION) throw new MigrationError(`The setting ${name} was saved by a newer version of Calm Scroll.`);
+  if (docVersion(raw) > DOC_VERSION) throw new MigrationError(`The setting ${name} was saved by a newer version of cobalt.`);
   return { v: 1, name: typeof raw.name === 'string' ? raw.name : name, value: raw.value };
 }
 
@@ -132,9 +132,9 @@ export function migrateSettingValue<K extends keyof Settings>(name: K, raw: unkn
 
 /** An export file of any supported version, migrated to the current one. Settings missing from it take their defaults. */
 export function migrateExport(doc: unknown): ExportFile {
-  if (!isRecord(doc) || doc.app !== 'calm-scroll') throw new MigrationError('This file is not a Calm Scroll export.');
+  if (!isRecord(doc) || doc.app !== 'calm-scroll') throw new MigrationError('This file is not a cobalt export.');
   const schema = typeof doc.schema === 'number' ? doc.schema : 0;
-  if (schema > DOC_VERSION) throw new MigrationError('This file comes from a newer version of Calm Scroll.');
+  if (schema > DOC_VERSION) throw new MigrationError('This file comes from a newer version of cobalt.');
   const file = {
     app: 'calm-scroll',
     schema: DOC_VERSION,

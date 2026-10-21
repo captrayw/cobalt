@@ -33,7 +33,7 @@ export const useApp = create<AppState>(() => ({
   storageNote: null,
 }));
 
-const NO_STORAGE = 'This browser is not letting Calm Scroll store data, so sessions will not be remembered.';
+const NO_STORAGE = 'This browser is not letting cobalt store data, so sessions will not be remembered.';
 const NOT_SAVED = 'This session could not be saved on this device.';
 
 /**
@@ -94,9 +94,9 @@ export async function initApp(): Promise<void> {
     pendingSettings = {};
     useApp.setState({ ready: true, repo, settings: { ...stored, ...early }, memory, lastSession });
     if (Object.keys(early).length > 0) await repo.saveSettings(early).catch(() => useApp.setState({ storageNote: NO_STORAGE }));
-    if (recovered > 0) console.info(`Calm Scroll: scored ${recovered} unfinished session(s) from last time.`);
+    if (recovered > 0) console.info(`cobalt: scored ${recovered} unfinished session(s) from last time.`);
   } catch (error) {
-    console.warn('Calm Scroll storage unavailable', error);
+    console.warn('cobalt storage unavailable', error);
     useApp.setState({ ready: true, repo: null, storageNote: NO_STORAGE });
   }
 }

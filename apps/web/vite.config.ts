@@ -49,8 +49,8 @@ export default defineConfig({
       includeManifestIcons: false,
       manifest: {
         id: base,
-        name: 'Calm Scroll',
-        short_name: 'Calm Scroll',
+        name: 'cobalt',
+        short_name: 'cobalt',
         description: 'Fifteen minutes of soft color and sound that slows into a breathing rhythm.',
         lang: 'en',
         start_url: base,

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Pure, deterministic Calm Scroll rules: generator, nine checks, color math, linger rhythm and learning loop. No DOM, audio or storage.",
+  "description": "Pure, deterministic cobalt rules: generator, nine checks, color math, linger rhythm and learning loop. No DOM, audio or storage.",
   "exports": {
     ".": "./src/index.ts"
   },
