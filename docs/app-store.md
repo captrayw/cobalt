@@ -82,35 +82,40 @@ In App Store Connect, open the app. The left side has **App Information**, **Pri
 
 **Name** (30 characters at most): cobalt: calm color
 
-**Subtitle** (30): Fifteen minutes of soft color
+**Subtitle** (30): Just calm. No fuss, no ads.
+
+If Apple asks for a subtitle without "no ads", use **Simply calm color and sound**.
 
 **Promotional text** (170):
 
-> Open it and the colors begin. Swipe up for the next page; stay, and the page starts to breathe. At night, swipe right for warm, dim colors with no blue.
+> No sign-up, no ads, no fuss. Open cobalt and the colors begin: fifteen calm minutes of color and sound, shaped by research into how we see and hear.
 
 **Description:**
 
-> cobalt is fifteen minutes of full-screen color and soft tones that slows into a breathing rhythm.
+> Just calm. cobalt is fifteen minutes of full-screen color and soft sound, with nothing in the way: no sign-up, no ads, no notifications, nothing to set up.
 >
-> Open it and the first color is already there. Swipe up for the next page. Each page holds one color and one gentle note, and flows into the next as you move on. Over the session the colors lose saturation and move from warm to cool, the notes descend and soften, and the last page settles on a low D.
+> Open it and the first color is already there, with its note. Swipe up for the next page. Stay on a page and it starts to breathe, each breath a little longer and softer. That is all there is to learn.
 >
-> Stay on a page and it starts to breathe: its note swells once per breath, each breath a little longer and softer. Scroll quickly and the pages grow shorter, so the session still lasts about fifteen minutes.
+> BUILT ON RESEARCH
+> Every choice in cobalt comes from a color company's evidence-graded research into color, sound and how people respond to them: what studies of color and feeling show, how color and pitch connect, and which sounds calm people. We kept what the evidence supports and left out what it does not, such as the popular "healing frequency" claims.
+>
+> So over a session the colors lose saturation and move from warm to cool, the notes descend and soften, and the pages slow into a breathing rhythm before settling on a low D. Each color has its own note, and the sound moves from one to the next without clicks or jumps.
 >
 > DAY AND NIGHT
-> At night, swipe right: the pages turn warm and dim, with no blue, a little darker page by page. Swipe left for day. The sound stays the same.
+> At night, swipe right: the pages turn warm and dim, with no blue, a little darker page by page. Swipe left for day.
 >
-> REMEMBERS WHAT YOU LINGER ON
-> cobalt notices the pages you stay with and brings some of them back in later sessions. You can see what it remembers, export it, or reset it at any time.
+> IT LEARNS, QUIETLY
+> cobalt notices the pages you stay with and brings some of them back in later sessions. You can see what it remembers, or reset it, at any time.
 >
 > PRIVATE BY DESIGN
-> No account, no ads, no tracking. cobalt makes no network requests and works offline, and everything stays on your iPhone.
+> No account, no ads, no tracking. cobalt makes no network requests and works offline. Everything stays on your iPhone.
 >
-> cobalt is made by A Color Company. It makes no medical or therapeutic claims.
+> Read the research at acolorcompany.com. cobalt is made by a color company and makes no medical or therapeutic claims.
 
 **Keywords** (100 characters, commas, no spaces; words in the name need not be repeated):
 
 ```
-colour,ambient,tones,breathing,slow,relax,unwind,bedtime,night,soothing,mindful,sound,visual,gentle
+ad-free,minimal,simple,relax,unwind,ambient,sound,tones,breathing,colour,psychology,bedtime,mindful
 ```
 
 **Screenshots:** the five JPEGs in [`docs/app-store/screenshots`](app-store/screenshots) are 1320 × 2868, the 6.9-inch iPhone size. Upload them to the iPhone 6.9-inch slot in this order; App Store Connect scales them for smaller iPhones.
