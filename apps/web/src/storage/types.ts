@@ -13,7 +13,7 @@ export interface Settings {
   useMemory: boolean;
   /** User volume, -30 to 0 dB. */
   volumeDb: number;
-  /** Show the note and color name on each page. */
+  /** Show the note and color name on each page. Owner change (Oct 2026): on by default. */
   pageDetails: boolean;
   /** Owner change (Oct 2026): the feed's night colors (Evening mode). Swiping sideways in a session switches it. */
   night: boolean;
@@ -31,7 +31,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   useMemory: true,
   volumeDb: 0,
-  pageDetails: false,
+  pageDetails: true,
   night: false,
   reducedMotion: 'system',
   theme: 'system',

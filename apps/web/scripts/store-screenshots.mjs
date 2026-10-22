@@ -50,8 +50,7 @@ try {
   const settle = () => page.waitForTimeout(2000);
   const feed = page.locator('main.feed');
 
-  await page.goto('/#/settings');
-  await page.getByRole('switch', { name: 'Page details' }).click();
+  // Page details are on by default.
   await page.goto('/#/');
   await feed.waitFor();
   await page.locator('.feed-details').waitFor();

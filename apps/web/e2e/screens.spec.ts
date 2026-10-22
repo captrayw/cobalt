@@ -21,11 +21,13 @@ test('Settings groups its controls in cards, with the preview first and the rese
   await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
   await expect(page.getByRole('radiogroup', { name: 'Motion' })).toBeVisible();
 
-  // The preview shows the page details setting at once.
+  // Page details are on by default, and the preview follows the switch at once.
+  const details = page.getByRole('switch', { name: 'Page details' });
   const preview = page.getByRole('img', { name: /first page of a session/ });
-  await expect(preview).toHaveText('');
-  await page.getByRole('switch', { name: 'Page details' }).click();
+  await expect(details).toHaveAttribute('aria-checked', 'true');
   await expect(preview).not.toHaveText('');
+  await details.click();
+  await expect(preview).toHaveText('');
 });
 
 test('Settings resets memory only after a confirmation', async ({ page }) => {

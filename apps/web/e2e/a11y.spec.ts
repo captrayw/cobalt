@@ -56,8 +56,8 @@ for (const colorScheme of ['dark', 'light'] as const) {
     });
 
     test('the feed with its first-page hint, page details, rest and paused screens have no serious or critical issues', async ({ page }) => {
-      await openWithClock(page, '/#/settings');
-      await page.getByRole('switch', { name: 'Page details' }).click();
+      // Page details are on by default.
+      await openWithClock(page);
       await startSession(page);
       await expect(page.getByText('Swipe up for the next page', { exact: true })).toBeVisible();
       await page.clock.runFor(1000);
