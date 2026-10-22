@@ -4,7 +4,7 @@ import { useReducedMotion } from '../appearance';
 import type { FeedController } from '../feed/controller';
 import { ColorCrossfade } from '../feed/crossfade';
 import { classifyKey, initialWheel, pointerAction, wheelAction } from '../feed/gestures';
-import { updateSettings, useApp } from '../store';
+import { hasWebAudio, updateSettings, useApp } from '../store';
 
 const FEED_LABEL =
   'Calm feed. Swipe up or press the down arrow for the next page. Swipe right or press the right arrow for night colors, left for day.';
@@ -179,8 +179,9 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   const surface = useRef<HTMLElement>(null);
   const crossfade = useRef<ColorCrossfade | null>(null);
   const awakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Until the first touch, a quiet hint says how to move on (sound also starts with that touch).
-  // Like the down arrow, it is retired once the person has moved on to a next page.
+  // Until the first touch, a quiet hint says how to move on. Like the down arrow, it is retired once
+  // the person has moved on to a next page. In a browser the sound waits for a touch, and iPhone
+  // Safari counts a tap but not a swipe, so until the sound starts a second line asks for a tap.
   const [touched, setTouched] = useState(false);
   const touchedRef = useRef(false);
 
@@ -297,6 +298,10 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
       )}
 
       {!reduced && showing && <div className="feed-progress" key={view.t0} style={{ animationDuration: `${page.dwell}s` }} />}
+
+      {view.awaitingSound && hasWebAudio() && view.status !== 'resting' && view.status !== 'paused' && (
+        <p className="feed-hint feed-hint-sound">Tap for sound</p>
+      )}
 
       {!learnedNext && !touched && view.index === 0 && view.status !== 'resting' && view.status !== 'paused' && (
         <p className="feed-hint">Swipe up for the next page</p>

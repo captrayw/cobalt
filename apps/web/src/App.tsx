@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAppearance } from './appearance';
+import { inNativeApp } from './platform/native';
 import { useRoute, type Route } from './router';
 import { About } from './screens/About';
 import { Dev } from './screens/Dev';
@@ -26,9 +27,11 @@ export function App() {
   }, [route]);
 
   // Opening the app goes straight into scrolling: a session starts as soon as storage is ready.
-  // Sound follows the first touch, swipe or key, which browsers require before audio can play.
+  // The iPhone app's web view lets sound play without a touch, so there the sound starts with it.
+  // A browser plays sound only after a touch (iPhone Safari counts a tap, not a swipe), so on the
+  // web the sound follows the first tap, key or swipe, and the feed shows "Tap for sound" until then.
   useEffect(() => {
-    if (route === 'feed' && ready && !feed) startSession(false);
+    if (route === 'feed' && ready && !feed) startSession(inNativeApp);
   }, [route, ready, feed]);
 
   switch (route) {

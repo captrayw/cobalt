@@ -30,8 +30,18 @@ try {
     hasTouch: true,
     colorScheme: 'light',
     reducedMotion: 'no-preference',
+    // Lets the style below in past the page's Content-Security-Policy.
+    bypassCSP: true,
   });
   const page = await context.newPage();
+  // The iPhone app starts its sound at launch, so it never shows the browser's "Tap for sound".
+  await page.addInitScript({
+    content: `document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style');
+      style.textContent = '.feed-hint-sound { display: none; }';
+      document.head.append(style);
+    });`,
+  });
   const shot = async (name) => {
     await page.screenshot({ path: join(out, `${name}.jpg`), type: 'jpeg', quality: 92 });
     console.log(`wrote ${name}.jpg`);

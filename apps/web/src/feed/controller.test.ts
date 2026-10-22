@@ -155,6 +155,34 @@ describe('feed controller', () => {
     expect(audio.engine.unlock).not.toHaveBeenCalled();
   });
 
+  it('opened without a gesture: the screen asks for a tap until the sound starts, even past a silent swipe', async () => {
+    const { feed, audio } = setup();
+    feed.attach();
+    feed.start(false);
+    const told = vi.fn();
+    feed.subscribe(told);
+    expect(feed.getView().awaitingSound).toBe(true);
+    // A swipe this browser does not count as a gesture: its try never settles, and no sound plays.
+    vi.mocked(audio.engine.unlock).mockImplementationOnce(() => new Promise<boolean>(() => undefined));
+    skip(1000);
+    feed.next();
+    await settle();
+    expect(feed.getView()).toMatchObject({ index: 1, awaitingSound: true });
+    // The tap after it starts the sound, and the screen is told.
+    feed.unlock();
+    await settle();
+    const before = told.mock.calls.length;
+    audio.emit('running');
+    expect(feed.getView().awaitingSound).toBe(false);
+    expect(told.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  it('started inside a tap or key press, as in the iPhone app: the screen never asks for one', () => {
+    const { feed } = setup();
+    feed.start();
+    expect(feed.getView().awaitingSound).toBe(false);
+  });
+
   it('runs the single timer: the planned dwell, then breaths of lingerCycle length on the held voice', () => {
     const { feed, audio, advance } = setup();
     feed.start();

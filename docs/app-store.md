@@ -68,7 +68,7 @@ App Store Connect then takes a few minutes to process the build. In App Store Co
 
 These parts can only be tried on a real iPhone:
 
-- Sound starts with the first touch, and plays with the silent switch on.
+- Sound starts as the app opens, and plays with the silent switch on.
 - The screen stays on while pages show. On the rest screen it may sleep.
 - A swipe up that starts at the very bottom edge turns the page. A second swipe there goes home.
 - A swipe right brings night colors and a swipe left brings day; each side arrow fades after its first use.
@@ -130,7 +130,7 @@ colour,ambient,tones,breathing,slow,relax,unwind,bedtime,night,soothing,mindful,
 
 **App Review Information:** no sign-in is needed. Add a contact name, a phone number and your own work email for Apple's reviewer (they are not shown on the App Store; the public pages keep info@acolorcompany.com), and these notes:
 
-> cobalt needs no account. It opens straight into a 15-minute session of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for the next page. Swipe right for night colors and left for day. The × at the top right ends the session and shows its summary. Sound starts with the first touch, so please turn the volume up. From Done for now, Memory shows what the app has learned and can export it through the share sheet. Everything stays on the device; the app makes no network requests.
+> cobalt needs no account. It opens straight into a 15-minute session of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for the next page. Swipe right for night colors and left for day. The × at the top right ends the session and shows its summary. Sound starts as the app opens, so please turn the volume up. From Done for now, Memory shows what the app has learned and can export it through the share sheet. Everything stays on the device; the app makes no network requests.
 
 ## 9. Submit for review
 

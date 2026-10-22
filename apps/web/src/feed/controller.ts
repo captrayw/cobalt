@@ -31,6 +31,11 @@ export interface FeedView {
   dim: number;
   /** When the page was shown, ms, so the progress hairline restarts per page. */
   t0: number;
+  /**
+   * The session opened without a touch and no sound has played yet. A browser starts sound only
+   * from a touch, and iPhone Safari counts a tap but not a swipe, so the screen asks for a tap.
+   */
+  awaitingSound: boolean;
 }
 
 export interface FeedSetup {
@@ -75,7 +80,13 @@ const toRecordDoc = (r: DwellRecord): SessionRecordDoc => ({
 });
 
 const sameView = (a: FeedView, b: FeedView): boolean =>
-  a.status === b.status && a.index === b.index && a.total === b.total && a.breath === b.breath && a.dim === b.dim && a.t0 === b.t0;
+  a.status === b.status &&
+  a.index === b.index &&
+  a.total === b.total &&
+  a.breath === b.breath &&
+  a.dim === b.dim &&
+  a.t0 === b.t0 &&
+  a.awaitingSound === b.awaitingSound;
 
 /** Runs the reducer's effects: sound, the single timer, the wake lock, checkpoints and pace slicing. */
 export class FeedController {
@@ -91,6 +102,8 @@ export class FeedController {
   private timerFor: FeedTimer | null = null;
   /** Audio has run at least once this session; only then can a stopped context pause the feed. */
   private audioRan = false;
+  /** The session started inside a tap or key press (or in the iPhone app), so its sound did too. */
+  private startedByGesture = false;
   /** An unlock or resume is in flight. */
   private resuming = false;
   /** Index of the page whose voice is sounding, or -1. */
@@ -137,6 +150,7 @@ export class FeedController {
    */
   start(gesture = true): void {
     this.wallStart = this.wallNow();
+    this.startedByGesture = gesture;
     this.dispatch({ type: 'start', at: this.now(), gesture });
   }
 
@@ -181,11 +195,7 @@ export class FeedController {
     this.wake.set(!state.hidden && (state.status === 'showing' || state.status === 'lingering'));
     if (state.status !== was) this.syncRestSleep();
     this.run(effects);
-    const view = this.computeView();
-    if (!sameView(view, this.view)) {
-      this.view = view;
-      for (const listener of this.listeners) listener();
-    }
+    this.refreshView();
     this.checkAudio();
   }
 
@@ -220,6 +230,7 @@ export class FeedController {
    */
   private onAudioRunning(): void {
     this.audioRan = true;
+    this.refreshView();
     const s = this.s;
     if ((s.status !== 'showing' && s.status !== 'lingering') || s.muted || this.voiced === s.index) return;
     const page = s.session.items[s.index];
@@ -352,7 +363,16 @@ export class FeedController {
       breath: s.breath,
       dim: dimFor(s),
       t0: s.t0,
+      awaitingSound: !this.audioRan && !this.startedByGesture,
     };
+  }
+
+  /** Recompute what the screen draws, and tell the listeners if it changed. */
+  private refreshView(): void {
+    const view = this.computeView();
+    if (sameView(view, this.view)) return;
+    this.view = view;
+    for (const listener of this.listeners) listener();
   }
 
   private syncTimer(): void {

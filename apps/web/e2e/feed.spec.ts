@@ -10,14 +10,22 @@ test('opening the app goes straight into the feed, and sound waits for the first
   await expect(hint).toBeVisible();
   // No audio context before a gesture: browsers would block it.
   expect((await feed(page))!.audio).toBe('idle');
+  // Until the sound starts, a line asks for a tap. Playwright's WebKit on Windows has no Web Audio,
+  // so there the feed runs on the silent engine and has no sound to ask for.
+  const webAudio = await page.evaluate(() => 'AudioContext' in window || 'webkitAudioContext' in window);
+  const soundHint = page.getByText('Tap for sound', { exact: true });
+  if (webAudio) await expect(soundHint).toBeVisible();
+  else await expect(soundHint).toHaveCount(0);
   // The feed takes focus right after its input listeners are attached.
   await expect(surface).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(surface).toHaveAttribute('data-page', '2');
   await expect(hint).toBeHidden();
-  // Playwright's WebKit on Windows has no Web Audio, so there the feed runs on the silent engine.
-  const webAudio = await page.evaluate(() => 'AudioContext' in window || 'webkitAudioContext' in window);
-  if (webAudio) await expect.poll(async () => (await feed(page))!.audio).not.toBe('idle');
+  if (webAudio) {
+    await expect.poll(async () => (await feed(page))!.audio).not.toBe('idle');
+    // A key press counts as a gesture here, so the sound starts and the line goes.
+    await expect(soundHint).toBeHidden();
+  }
 });
 
 test('quick scrolling: after ten quick pages the rest is sliced so the session still lasts 15 minutes', async ({ page }) => {

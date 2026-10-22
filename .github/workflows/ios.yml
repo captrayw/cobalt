@@ -103,6 +103,9 @@ jobs:
           cat ios-ci/console-light.log
           # The web app ran in the native shell, its storage opened, and nothing failed or threw.
           grep -q "cobalt: iPhone app ready; storage open" ios-ci/console-light.log
+          # The sound starts at launch, without a touch. A runner without audio output may not let it
+          # run, so this only reports.
+          grep "cobalt: sound at launch" ios-ci/console-*.log || echo "::warning::The log has no sound-at-launch line."
           if grep -E "ERROR|Unable to load|\[error\]" ios-ci/console-*.log; then
             echo "::error::The app logged an error in the simulator (lines above)."
             exit 1

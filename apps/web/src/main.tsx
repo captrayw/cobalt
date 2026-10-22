@@ -30,6 +30,8 @@ void initApp().then(() => {
   if (inNativeApp) {
     const storage = useApp.getState().repo ? 'open' : 'unavailable';
     console.info(`cobalt: iPhone app ready; storage ${storage}; audio session ${'audioSession' in navigator ? 'yes' : 'no'}`);
+    // The app starts its sound at launch, without a touch; the simulator's log shows whether it did.
+    setTimeout(() => console.info(`cobalt: sound at launch ${useApp.getState().feed?.audioState ?? 'without a session'}`), 3000);
   }
 });
 

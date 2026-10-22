@@ -127,10 +127,12 @@ export async function reloadFromRepo(): Promise<void> {
   useApp.setState({ settings, memory, lastSession });
 }
 
+/** True where the browser has Web Audio; elsewhere the feed runs without sound. */
+export const hasWebAudio = (): boolean => typeof window !== 'undefined' && ('AudioContext' in window || 'webkitAudioContext' in window);
+
 /** A Web Audio engine, or a silent one where the browser has no Web Audio. */
 export function createEngine(volumeDb: number): AudioEngine {
-  const hasWebAudio = typeof window !== 'undefined' && ('AudioContext' in window || 'webkitAudioContext' in window);
-  return hasWebAudio ? new WebAudioEngine({ volumeDb }) : new NullAudioEngine();
+  return hasWebAudio() ? new WebAudioEngine({ volumeDb }) : new NullAudioEngine();
 }
 
 /** Clear remembered pages and stored sessions, after a snapshot of the memory. Settings stay. */
@@ -146,8 +148,9 @@ const RHYTHM: LingerMode = 'gradual';
 
 /**
  * Start a fresh session. The session is generated, passes all nine checks, and draws on memory
- * when the switch is on. With `gesture` (a tap or key press, as on "Start next session") audio
- * unlocks at once; without it (opening the app) sound starts with the first touch in the feed.
+ * when the switch is on. With `gesture` (a tap or key press, as on "Start a session", or opening the
+ * iPhone app, whose web view needs no touch) audio unlocks at once; without it (opening the app in
+ * a browser) sound starts with the first touch in the feed.
  */
 export function startSession(gesture: boolean): void {
   const state = useApp.getState();

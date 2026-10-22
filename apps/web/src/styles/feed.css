@@ -36,6 +36,14 @@
   animation: fade-in 180ms ease-out;
 }
 
+/* "Tap for sound", until the sound starts in a browser: in the middle of the page, like "Tap to
+   resume", clear of the page details and the swipe-up hint at the bottom. */
+.feed-hint-sound {
+  top: 50%;
+  bottom: auto;
+  translate: 0 -50%;
+}
+
 /* Day or night: a short notice near the top that fades in, holds a moment and fades away. Opacity
    only, so it also plays under reduced motion. */
 .feed-notice {
