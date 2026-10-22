@@ -4,6 +4,7 @@ import { useReducedMotion } from '../appearance';
 import type { FeedController } from '../feed/controller';
 import { ColorCrossfade } from '../feed/crossfade';
 import { classifyKey, initialWheel, pointerAction, wheelAction } from '../feed/gestures';
+import { WoolLayer } from '../feed/wool-layer';
 import { hasWebAudio, updateSettings, useApp } from '../store';
 
 const FEED_LABEL =
@@ -251,6 +252,29 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
   }, [shown, page.xfade, reduced]);
   useEffect(() => () => crossfade.current?.stop(), []);
 
+  // The wool texture over the color: drawn in a worker, a little different on every page.
+  const woolA = useRef<HTMLCanvasElement>(null);
+  const woolB = useRef<HTMLCanvasElement>(null);
+  const wool = useRef<WoolLayer | null>(null);
+  useEffect(() => {
+    if (!woolA.current || !woolB.current || !surface.current) return;
+    const layer = new WoolLayer(woolA.current, woolB.current, surface.current);
+    wool.current = layer;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => surface.current && layer.resize(surface.current), 300);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (timer) clearTimeout(timer);
+      layer.destroy();
+      wool.current = null;
+    };
+  }, []);
+  useEffect(() => wool.current?.show(view.index, page.xfade, reduced), [view.index, page.xfade, reduced]);
+
   const showing = view.status === 'showing';
   const announcement = pageDetails ? `Page ${view.index + 1} of ${view.total}. ${page.note}, ${shown.name}${page.memKey ? ', from memory' : ''}.` : '';
   // Kept in a region that is always present, so screen readers announce each change.
@@ -278,6 +302,8 @@ export function FeedScreen({ feed }: { feed: FeedController }) {
       data-memory={page.memKey ? 'true' : undefined}
       data-night={night ? 'true' : undefined}
     >
+      <canvas ref={woolA} className="feed-wool" aria-hidden="true" />
+      <canvas ref={woolB} className="feed-wool" aria-hidden="true" />
       <div className="feed-dim" style={{ opacity: view.dim }} />
 
       {pageDetails && showing && (

@@ -84,6 +84,19 @@
   }
 }
 
+/* The wool texture: two layers that take turns over the page color. Hard-light multiplies by twice
+   their gray up to mid-gray and screens above it: flat wool keeps the color, creases shade it and
+   ridges catch a little light (see feed/wool.ts). */
+.feed-wool {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  mix-blend-mode: hard-light;
+  pointer-events: none;
+}
+
 .feed-dim {
   position: absolute;
   inset: 0;
