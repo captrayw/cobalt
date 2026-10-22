@@ -1,6 +1,6 @@
 # cobalt
 
-A cobalt app by A Color Company, [acolorcompany.com](https://acolorcompany.com). It runs at https://captrayw.github.io/cobalt/.
+A cobalt app by A Color Company, [acolorcompany.com](https://acolorcompany.com). It runs at https://cobalt.acolorcompany.com/.
 
 A phone-first web app that plays a 15-minute feed of full-screen colors and soft tones. It opens straight into the feed, and the sound starts with the first touch. Colors lose saturation and move from warm to cool, notes descend and soften, and the last page resolves to D3. Each page's note holds until the person moves on, then flows into the next. A page held past its planned time starts to breathe: its note swells once per breath, each breath a little longer, softer and more exhale-weighted. A person who scrolls quickly gets more, shorter pages, so the session still lasts about 15 minutes. At night, a swipe to the right turns the colors warm and dim, with no blue, darker page by page; a swipe to the left brings the day colors back. The app remembers the pages a person lingers on and brings some back in later sessions. Everything stays on the device.
 
@@ -23,11 +23,12 @@ pnpm preview        # serve the build at http://localhost:4173 (service worker o
 
 ## Put it on a phone
 
-The app is published with GitHub Pages. `.github/workflows/pages.yml` builds it for a folder named after the repository and deploys it on every push to `main`, at `https://<user>.github.io/<repository>/`. Set it up once:
+The app is published with GitHub Pages at https://cobalt.acolorcompany.com/. `.github/workflows/pages.yml` builds it for the address in the repository's Pages settings and deploys it on every push to `main`: the root of a custom domain, or `https://<user>.github.io/<repository>/` without one. Set it up once:
 
 1. Create an empty public repository on GitHub. On a free plan, GitHub Pages needs a public repository.
 2. In the repository, open **Settings → Pages** and set **Source** to **GitHub Actions**.
 3. Push: `git remote add origin https://github.com/<user>/<repository>.git`, then `git push -u origin main`. The first push opens a GitHub sign-in window.
+4. Optionally, use your own domain. At the domain's DNS host, add a CNAME record that points the name (here `cobalt`) to `<user>.github.io`. Enter the full name (`cobalt.acolorcompany.com`) under **Settings → Pages → Custom domain**, run **Actions → Deploy to GitHub Pages → Run workflow** so the app is built for it, and tick **Enforce HTTPS** once GitHub has issued the certificate. The `github.io` address then forwards to it.
 
 When the **Deploy to GitHub Pages** run on the **Actions** tab turns green, open the address on the phone and add it to the home screen: **Share → Add to Home Screen** in Safari on an iPhone, or **⋮ → Install app** in Chrome on Android. After the first visit it works offline. Memory stays with that address, so keep using the same one.
 

@@ -117,9 +117,9 @@ colour,ambient,tones,breathing,slow,relax,unwind,bedtime,night,soothing,mindful,
 
 | Field | Value |
 |---|---|
-| Support URL | https://captrayw.github.io/cobalt/support.html (help, and info@acolorcompany.com for questions) |
+| Support URL | https://cobalt.acolorcompany.com/support.html (help, and info@acolorcompany.com for questions) |
 | Marketing URL (optional) | https://acolorcompany.com |
-| Privacy Policy URL (App Information) | https://captrayw.github.io/cobalt/privacy.html |
+| Privacy Policy URL (App Information) | https://cobalt.acolorcompany.com/privacy.html |
 | Copyright | 2026 A Color Company |
 | Category (App Information) | Lifestyle |
 | Content rights | No, it does not contain, show or access third-party content |
@@ -140,7 +140,7 @@ If Apple answers that cobalt is a website in an app (guideline 4.2, minimum func
 
 ## Updating the app later
 
-Every push to `main` also republishes the support and privacy pages at captrayw.github.io/cobalt. For the App Store, raise the version in Xcode's project file (`MARKETING_VERSION` in `apps/web/ios/App/App.xcodeproj/project.pbxproj`, from 1.0 to 1.1), push, and run **Actions → iOS** with **Upload to TestFlight**. Then, in App Store Connect, add the new version with **+**, choose its build, say what changed, and submit it.
+Every push to `main` also republishes the support and privacy pages at cobalt.acolorcompany.com. For the App Store, raise the version in Xcode's project file (`MARKETING_VERSION` in `apps/web/ios/App/App.xcodeproj/project.pbxproj`, from 1.0 to 1.1), push, and run **Actions → iOS** with **Upload to TestFlight**. Then, in App Store Connect, add the new version with **+**, choose its build, say what changed, and submit it.
 
 ## How it works
 

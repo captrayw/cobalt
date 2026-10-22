@@ -1,6 +1,7 @@
 name: Deploy to GitHub Pages
 
-# Every push to main publishes the app at https://<user>.github.io/<repository>/.
+# Every push to main publishes the app at the address set in Settings → Pages: its custom domain,
+# https://cobalt.acolorcompany.com/, or https://<user>.github.io/<repository>/ without one.
 # One-time setup on GitHub: Settings → Pages → Source: GitHub Actions.
 on:
   push:
@@ -23,17 +24,20 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # Reads the site's address from the Pages settings, custom domain included.
+      - id: pages
+        uses: actions/configure-pages@v6
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build for the site's folder
+      - name: Build for the site's address
         run: pnpm build
         env:
-          # A project site lives in a folder named after the repository; a <user>.github.io site at the root.
-          BASE_PATH: ${{ endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
+          # '' at the root of a custom domain or a <user>.github.io site; '/<repository>' for a project site.
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/web/dist
