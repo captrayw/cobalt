@@ -23,14 +23,15 @@ pnpm preview        # serve the build at http://localhost:4173 (service worker o
 
 ## Put it on a phone
 
-The app is published with GitHub Pages at https://cobalt.acolorcompany.com/. `.github/workflows/pages.yml` builds it for the address in the repository's Pages settings and deploys it on every push to `main`: the root of a custom domain, or `https://<user>.github.io/<repository>/` without one. Set it up once:
+The app is published on Railway at https://cobalt.acolorcompany.com/, behind Cloudflare, and Railway builds and publishes it again on every push to `main`. Railway's builder (Railpack) runs `pnpm install` and `pnpm build`, then serves `apps/web/dist` with Caddy, set up by the `Caddyfile` at the root of the repository: files with a content hash in their names are kept for a year, and the pages, the manifest and the service worker are checked every time, so a new version reaches people within minutes. Pages also carry `no-transform`, so that Cloudflare does not add its analytics script to them. Set it up once:
 
-1. Create an empty public repository on GitHub. On a free plan, GitHub Pages needs a public repository.
-2. In the repository, open **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Push: `git remote add origin https://github.com/<user>/<repository>.git`, then `git push -u origin main`. The first push opens a GitHub sign-in window.
-4. Optionally, use your own domain. At the domain's DNS host, add a CNAME record that points the name (here `cobalt`) to `<user>.github.io`. Enter the full name (`cobalt.acolorcompany.com`) under **Settings → Pages → Custom domain**, run **Actions → Deploy to GitHub Pages → Run workflow** so the app is built for it, and tick **Enforce HTTPS** once GitHub has issued the certificate. The `github.io` address then forwards to it.
+1. In a Railway project, add a service from this GitHub repository, branch `main`.
+2. Give the service two variables: `RAILPACK_SPA_OUTPUT_DIR=apps/web/dist`, so that Railpack serves the build, and `RAILPACK_NODE_VERSION=24`, the Node version CI uses.
+3. Under **Settings → Networking**, add the custom domain (`cobalt.acolorcompany.com`, port 8080). Railway shows a CNAME record and a TXT record; add both at the domain's DNS host. At Cloudflare, keep the CNAME proxied and set **SSL/TLS** to **Full**: Cloudflare then holds the certificate.
 
-When the **Deploy to GitHub Pages** run on the **Actions** tab turns green, open the address on the phone and add it to the home screen: **Share → Add to Home Screen** in Safari on an iPhone, or **⋮ → Install app** in Chrome on Android. After the first visit it works offline. Memory stays with that address, so keep using the same one.
+Once the deployment shows as online in Railway, open the address on the phone and add it to the home screen: **Share → Add to Home Screen** in Safari on an iPhone, or **⋮ → Install app** in Chrome on Android. After the first visit it works offline. Memory stays with that address, so keep using the same one.
+
+Until 28 October 2026, `.github/workflows/pages.yml` also publishes a copy on GitHub Pages, for visitors whose DNS still gives the old answer. Then GitHub Pages is switched off and the workflow goes.
 
 Any other static host works too. Upload `apps/web/dist` from `pnpm build` to the root of a host. To serve it from a folder instead, build with `BASE_PATH=/<folder>/`, so the icons, manifest and service worker point inside that folder.
 

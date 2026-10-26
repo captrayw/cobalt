@@ -3,8 +3,10 @@
 # Caddy using this file in place of its default one (core/providers/node/Caddyfile.template in
 # railwayapp/railpack); it fills in the DIST_DIR placeholder below at build time. On top of the
 # default, it says how long browsers and Cloudflare may keep each file, so a new version reaches
-# people within minutes, and names the font and manifest types. Unknown paths get a 404, as on
-# GitHub Pages: routes live in the hash, and the service worker answers navigations offline.
+# people within minutes, and names the font and manifest types. Pages also carry no-transform,
+# which keeps Cloudflare from adding its analytics script to them: cobalt has no analytics. Unknown
+# paths get a 404, as on GitHub Pages: routes live in the hash, and the service worker answers
+# navigations offline.
 
 {
 	admin off
@@ -39,11 +41,11 @@
 
 	# The pages, the manifest and the service worker decide which version runs: check them every time.
 	@entry path / *.html /sw.js /manifest.webmanifest
-	header @entry Cache-Control "no-cache"
+	header @entry Cache-Control "no-cache, no-transform"
 
-	# Everything else, such as the icons: ten minutes, as on GitHub Pages.
+	# Everything else, such as the icons and /privacy without its .html: ten minutes, as on GitHub Pages.
 	@other not path / *.html /sw.js /manifest.webmanifest /assets/* /workbox-*.js
-	header @other Cache-Control "public, max-age=600"
+	header @other Cache-Control "public, max-age=600, no-transform"
 
 	@manifest path *.webmanifest
 	header @manifest Content-Type "application/manifest+json"
