@@ -1,0 +1,68 @@
+# How Railway serves the app. Railpack builds it with `pnpm build` and, told by the service
+# variable RAILPACK_SPA_OUTPUT_DIR=apps/web/dist where the build lands, serves that folder with
+# Caddy using this file in place of its default one (core/providers/node/Caddyfile.template in
+# railwayapp/railpack); it fills in the DIST_DIR placeholder below at build time. On top of the
+# default, it says how long browsers and Cloudflare may keep each file, so a new version reaches
+# people within minutes, and names the font and manifest types. Unknown paths get a 404, as on
+# GitHub Pages: routes live in the hash, and the service worker answers navigations offline.
+
+{
+	admin off
+	persist_config off
+	auto_https off
+	log {
+		format json
+	}
+	servers {
+		# Railway's proxy
+		trusted_proxies static private_ranges 100.0.0.0/8
+	}
+}
+
+:{$PORT:80} {
+	log {
+		format json
+	}
+
+	respond /health 200
+
+	root * {{.DIST_DIR}}
+
+	header {
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	# Files with a content hash in their names never change.
+	@hashed path /assets/* /workbox-*.js
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	# The pages, the manifest and the service worker decide which version runs: check them every time.
+	@entry path / *.html /sw.js /manifest.webmanifest
+	header @entry Cache-Control "no-cache"
+
+	# Everything else, such as the icons: ten minutes, as on GitHub Pages.
+	@other not path / *.html /sw.js /manifest.webmanifest /assets/* /workbox-*.js
+	header @other Cache-Control "public, max-age=600"
+
+	@manifest path *.webmanifest
+	header @manifest Content-Type "application/manifest+json"
+	@woff2 path *.woff2
+	header @woff2 Content-Type "font/woff2"
+	@woff path *.woff
+	header @woff Content-Type "font/woff"
+
+	encode gzip zstd
+
+	try_files {path} {path}.html {path}/index.html
+
+	file_server {
+		hide .git .env*
+	}
+
+	# A missing file is never kept, whatever its name promises.
+	handle_errors {
+		header Cache-Control "no-store"
+		respond "{err.status_code} {err.status_text}"
+	}
+}
