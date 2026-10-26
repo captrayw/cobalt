@@ -51,7 +51,7 @@ export default defineConfig({
         id: base,
         name: 'cobalt',
         short_name: 'cobalt',
-        description: 'Fifteen minutes of soft color and sound that slows into a breathing rhythm.',
+        description: 'Full-screen color and soft sound that slows into a breathing rhythm.',
         lang: 'en',
         start_url: base,
         scope: base,

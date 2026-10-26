@@ -29,7 +29,7 @@ Tick no capabilities, then **Continue → Register**.
 On [appstoreconnect.apple.com](https://appstoreconnect.apple.com), open **Apps**, click **+** and choose **New App**:
 
 - **Platforms:** iOS
-- **Name:** a name no other app has. The App Store already has an app called "Cobalt", so use a longer one, such as **cobalt: calm color**. The name under the icon on the phone stays "cobalt".
+- **Name:** cobalt by a color company. Every name on the App Store must be unique, and "Cobalt" is taken. The name under the icon on the phone stays "cobalt".
 - **Primary language:** English (U.S.)
 - **Bundle ID:** com.acolorcompany.cobalt
 - **SKU:** cobalt-ios
@@ -80,42 +80,47 @@ These parts can only be tried on a real iPhone:
 
 In App Store Connect, open the app. The left side has **App Information**, **Pricing and Availability**, **App Privacy** and the version, **1.0 Prepare for Submission**. The text below is ready to paste; change anything you like.
 
-**Name** (30 characters at most): cobalt: calm color
+The text is lowercase and playful on purpose. Keep other apps' names, such as TikTok, out of every field: Apple's guideline 2.3.7 bars them from the subtitle and keywords.
 
-**Subtitle** (30): Just calm. No fuss, no ads.
+**Name** (30 characters at most): cobalt by a color company
 
-If Apple asks for a subtitle without "no ads", use **Simply calm color and sound**.
+**Subtitle** (30): doomscrolling but make it calm
 
-**Promotional text** (170):
+**Promotional text** (170; it can be changed at any time without a new review):
 
-> No sign-up, no ads, no fuss. Open cobalt and the colors begin: fifteen calm minutes of color and sound, shaped by research into how we see and hear.
+> for when your brain has 47 tabs open: swipe through full-screen color and soft sound. no ads, no account, no notifications.
 
-**Description:**
+**Description** (copy it from the box, so the line breaks stay):
 
-> Just calm. cobalt is fifteen minutes of full-screen color and soft sound, with nothing in the way: no sign-up, no ads, no notifications, nothing to set up.
->
-> Open it and the first color is already there, with its note. Swipe up for the next page. Stay on a page and it starts to breathe, each breath a little longer and softer. That is all there is to learn.
->
-> BUILT ON RESEARCH
-> Every choice in cobalt comes from a color company's evidence-graded research into color, sound and how people respond to them: what studies of color and feeling show, how color and pitch connect, and which sounds calm people. We kept what the evidence supports and left out what it does not, such as the popular "healing frequency" claims.
->
-> So over a session the colors lose saturation and move from warm to cool, the notes descend and soften, and the pages slow into a breathing rhythm before settling on a low D. Each color has its own note, and the sound moves from one to the next without clicks or jumps.
->
-> DAY AND NIGHT
-> At night, swipe right: the pages turn warm and dim, with no blue, a little darker page by page. Swipe left for day.
->
-> IT LEARNS, QUIETLY
-> cobalt notices the pages you stay with and brings some of them back in later sessions. You can see what it remembers, or reset it, at any time.
->
-> PRIVATE BY DESIGN
-> No account, no ads, no tracking. cobalt makes no network requests and works offline. Everything stays on your iPhone.
->
-> Read the research at acolorcompany.com. cobalt is made by a color company and makes no medical or therapeutic claims.
+```text
+your thumb wants to scroll. your brain wants a break. cobalt gives you both.
 
-**Keywords** (100 characters, commas, no spaces; words in the name need not be repeated):
+it scrolls like the feeds you already know, except every page is one full-screen color with its own soft note, and the vibe gets calmer the longer you scroll. no ads. no account. no notifications. nothing to set up. you open it and it just starts.
+
+how it works (pay attention, it's very hard)
+swipe up for the next page. stay on one and it starts to breathe, each breath a little longer and softer. that's it. that's the whole tutorial.
+
+not just vibes: actual research
+every choice in cobalt comes from a color company's evidence-graded research into color, sound and how people respond to them: what studies of color and feeling show, how color and pitch connect, and which sounds actually calm people down. we kept what the evidence supports and skipped what it doesn't, like the "healing frequency" stuff.
+
+so as you scroll, the colors soften and drift from warm to cool, the notes slide lower and quieter, and the pages slow into a breathing rhythm before landing on a low D. every color has its own note, and the sound glides from one to the next with no clicks or jumps.
+
+night mode that gets it
+late at night? swipe right: warm, dim pages with no blue, a little darker with every page. swipe left for day.
+
+it remembers your faves
+cobalt notices the pages you linger on and brings some of them back next time. see what it remembers, or wipe it, whenever you want.
+
+your data stays on your phone. period.
+no account, no sign-in, no tracking. what cobalt learns lives on your iPhone and never gets sent anywhere: the app makes zero network requests and works offline. new phone? export one file, import it there, done.
+
+the research lives at acolorcompany.com. cobalt is a calm little app, not a medical one, and it makes no medical or therapeutic claims.
+```
+
+**Keywords** (100 characters, commas, no spaces; words in the name and subtitle need not be repeated):
 
 ```
-ad-free,minimal,simple,relax,unwind,ambient,sound,tones,breathing,colour,psychology,bedtime,mindful
+scroll,swipe,feed,chill,vibes,aesthetic,cozy,ad-free,relax,unwind,soothing,sound,breathing,bedtime
 ```
 
 **Screenshots:** the five JPEGs in [`docs/app-store/screenshots`](app-store/screenshots) are 1320 × 2868, the 6.9-inch iPhone size. Upload them to the iPhone 6.9-inch slot in this order; App Store Connect scales them for smaller iPhones.
@@ -123,7 +128,7 @@ ad-free,minimal,simple,relax,unwind,ambient,sound,tones,breathing,colour,psychol
 | Field | Value |
 |---|---|
 | Support URL | https://cobalt.acolorcompany.com/support.html (help, and info@acolorcompany.com for questions) |
-| Marketing URL (optional) | https://acolorcompany.com |
+| Marketing URL (optional) | https://acolorcompany.com/demo/ (the app's page on the website; the App Store links it as the developer's website) |
 | Privacy Policy URL (App Information) | https://cobalt.acolorcompany.com/privacy.html |
 | Copyright | 2026 A Color Company |
 | Category (App Information) | Lifestyle |
@@ -135,7 +140,7 @@ ad-free,minimal,simple,relax,unwind,ambient,sound,tones,breathing,colour,psychol
 
 **App Review Information:** no sign-in is needed. Add a contact name, a phone number and your own work email for Apple's reviewer (they are not shown on the App Store; the public pages keep info@acolorcompany.com), and these notes:
 
-> cobalt needs no account. It opens straight into a 15-minute session of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for the next page. Swipe right for night colors and left for day. The × at the top right ends the session and shows its summary. Sound starts as the app opens, so please turn the volume up. From Done for now, Memory shows what the app has learned and can export it through the share sheet. Everything stays on the device; the app makes no network requests.
+> cobalt needs no account and has no sign-in. It opens straight into a session of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for the next page. Swipe right for night colors and left for day. The × at the top right ends the session and shows its summary. Sound starts as the app opens, so please turn the volume up. From Done for now, Memory shows what the app has learned and can export it through the share sheet. Everything is stored on the device; the app makes no network requests.
 
 ## 9. Submit for review
 
