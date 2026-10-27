@@ -1,0 +1,8 @@
+2026-10-27 17:20:43.600 App[9291:31973] DiskCookieStorage changing policy from 2 to 0, cookie file: file:///Users/runner/Library/Developer/CoreSimulator/Devices/CDFBE5B7-49AC-41DA-BEF5-734F34972AEC/data/Containers/Data/Application/5331F972-EB0B-4222-90F8-B3651396F31B/Library/Cookies/com.acolorcompany.cobalt.binarycookies
+⚡️  Loading app at capacitor://localhost...
+⚡️  WebView loaded
+⚡️  [info] - cobalt: iPhone app ready; storage open; audio session yes
+⚡️  To Native ->  Cobalt feed 6204440
+⚡️  TO JS undefined
+⚡️  [info] - cobalt: sound at launch running
+com.acolorcompany.cobalt: 9291
