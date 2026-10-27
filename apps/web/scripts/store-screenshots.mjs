@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * App Store screenshots at the 6.9-inch iPhone size, 1320 x 2868 (440 x 956 points at 3x).
+ * App Store screenshots in two iPhone sizes: 6.9-inch, 1320 x 2868 (440 x 956 points at 3x), and
+ * 6.3-inch, 1206 x 2622 (402 x 874 points at 3x), the size App Store Connect requires.
  *
  * First the app's own screens are taken from the production build in WebKit, the engine the iPhone
  * app runs on, with the iPhone 17 Pro Max's safe areas (62 points at the top with the status bar
  * hidden, 34 at the bottom), as the simulator shows them. Each session has a fixed seed, so the same
  * pages come back every time, and runs on Playwright's clock, so minutes of scrolling take seconds.
  * Then store-frames.mjs puts each screen in an iPhone with a caption and callouts, in Chromium, and
- * writes JPEGs, which have no alpha channel, to docs/app-store/screenshots/.
+ * writes JPEGs, which have no alpha channel, to docs/app-store/screenshots/6.9-inch/ and 6.3-inch/.
  *   pnpm --filter @calm/web build && node apps/web/scripts/store-screenshots.mjs
  * With --frames it only redraws the frames from the screens taken last time.
  */
@@ -27,6 +28,11 @@ mkdirSync(out, { recursive: true });
 mkdirSync(screens, { recursive: true });
 
 const VIEWPORT = { width: 440, height: 956 };
+/** The frames' sizes in points: 6.9-inch, which they are laid out at, and 6.3-inch. */
+const SIZES = [
+  { dir: '6.9-inch', width: 440, height: 956 },
+  { dir: '6.3-inch', width: 402, height: 874 },
+];
 const INSETS = { top: 62, right: 0, bottom: 34, left: 0 };
 /** Seed 1 opens on a soft red and reaches teal and blue; seed 5 opens on yellow. */
 const SEED = { day: 1, yellow: 5 };
@@ -232,12 +238,23 @@ async function drawFrames() {
   const meta = JSON.parse(readFileSync(join(screens, 'screens.json'), 'utf8'));
   const browser = await chromium.launch();
   try {
-    const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 3 });
-    for (const frame of FRAMES) {
-      await page.setContent(frameHtml(frame, meta, screens), { waitUntil: 'load' });
-      await page.evaluate(() => document.fonts.ready);
-      await page.screenshot({ path: join(out, `${frame.file}.jpg`), type: 'jpeg', quality: 92 });
-      console.log(`wrote ${frame.file}.jpg`);
+    for (const { dir, width, height } of SIZES) {
+      mkdirSync(join(out, dir), { recursive: true });
+      const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 3 });
+      for (const frame of FRAMES) {
+        await page.setContent(frameHtml(frame, meta, screens), { waitUntil: 'load' });
+        // A smaller frame is the 6.9-inch one scaled to fit; the two shapes differ by under 0.1%. With
+        // a background of its own, the page no longer paints the body's background unscaled.
+        if (width !== VIEWPORT.width) {
+          await page.addStyleTag({
+            content: `html { background: #000; } body { transform: scale(${width / VIEWPORT.width}, ${height / VIEWPORT.height}); transform-origin: 0 0; }`,
+          });
+        }
+        await page.evaluate(() => document.fonts.ready);
+        await page.screenshot({ path: join(out, dir, `${frame.file}.jpg`), type: 'jpeg', quality: 92 });
+        console.log(`wrote ${dir}/${frame.file}.jpg`);
+      }
+      await page.close();
     }
   } finally {
     await browser.close();
