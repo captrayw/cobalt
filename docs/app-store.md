@@ -123,7 +123,16 @@ the research lives at acolorcompany.com. cobalt is a calm little app, not a medi
 scroll,swipe,feed,chill,vibes,aesthetic,cozy,ad-free,relax,unwind,soothing,sound,breathing,bedtime
 ```
 
-**Screenshots:** the five JPEGs in [`docs/app-store/screenshots`](app-store/screenshots) are 1320 × 2868, the 6.9-inch iPhone size. Upload them to the iPhone 6.9-inch slot in this order; App Store Connect scales them for smaller iPhones.
+**Screenshots:** the six JPEGs in [`docs/app-store/screenshots`](app-store/screenshots) are 1320 × 2868, the 6.9-inch iPhone size. Each puts a real screen of the app in an iPhone, under a caption, with callouts that point at what the screen shows. In App Store Connect, open **Distribution → Asset Library**, click **+**, choose **Previews and Screenshots** and the 6.9-inch iPhone size, and add them in order; App Store Connect scales them for smaller iPhones.
+
+| # | Caption | The screen |
+|---|---|---|
+| 1 | doomscrolling but make it calm | a session's first page, with a swipe up |
+| 2 | the whole tutorial | the first page, with each control labeled |
+| 3 | late night? swipe right. | a night page, with the night palette |
+| 4 | every color has its own note | a teal page's note and color, and the notes falling to a low D |
+| 5 | it remembers your faves | a session's summary and the pages lingered on |
+| 6 | your data stays on your phone | Memory, with "the receipt": no ads, accounts, notifications, streaks, trackers or network requests |
 
 | Field | Value |
 |---|---|
@@ -157,4 +166,4 @@ Every push to `main` also republishes the support and privacy pages at cobalt.ac
 - **The shell:** Capacitor 8 wraps the production web build, made with base `/` and copied into `apps/web/ios/App/App/public` by `pnpm --filter @calm/web ios:build`. The iPhone app needs no service worker. `capacitor.config.ts` holds the app's ID and name.
 - **Native code:** `apps/web/ios/App/App/Cobalt.swift` holds the view controller and cobalt's plugin. The web side, `apps/web/src/platform/native.ts`, loads Capacitor only inside the app.
 - **The workflow:** `.github/workflows/ios.yml` runs on every change to the app. It builds for the simulator, opens the app in the largest iPhone simulator in light and dark appearance, checks the log for the app's ready line and for errors, takes screenshots, and pushes them with the log to the `ios-ci` branch. Run by hand with **Upload to TestFlight**, it archives without signing, then signs during export with Apple's cloud-managed distribution certificate and uploads, so no certificate or profile is kept anywhere.
-- **Screenshots:** `pnpm --filter @calm/web build && node apps/web/scripts/store-screenshots.mjs` takes them again from the production build in WebKit.
+- **Screenshots:** `pnpm --filter @calm/web build && node apps/web/scripts/store-screenshots.mjs` takes the app's screens again from the production build in WebKit, with the iPhone's safe areas and fixed session seeds, and frames them. The captions, callouts and colors are in `apps/web/scripts/store-frames.mjs`; with `--frames`, the script only redraws the frames from the screens it took last time.
