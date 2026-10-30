@@ -1,6 +1,6 @@
 # Putting cobalt on the App Store
 
-cobalt's iPhone app is built: the app runs in a native iPhone shell (`apps/web/ios`). GitHub builds it on its Mac computers, so no Mac is needed. What is left needs your Apple account: steps 1 to 6 below set it up once, step 7 is a check on your own iPhone, and steps 8 and 9 send cobalt to Apple's review.
+cobalt's iPhone app is built: the app runs in a native iPhone shell (`apps/web/ios`). GitHub builds it on its Mac computers, so no Mac is needed. What is left needs your Apple account: steps 1 to 6 below set it up once, step 7 is a check on your own iPhone, recorded for Apple, and steps 8 and 9 send cobalt to Apple's review.
 
 Costs: the Apple Developer Program is US$99 a year. GitHub's Mac builds are free for a public repository such as this one.
 
@@ -64,7 +64,15 @@ On GitHub, open **Actions → iOS** and click **Run workflow**. Keep **Use workf
 
 App Store Connect then takes a few minutes to process the build. In App Store Connect, open the app, go to **TestFlight → Internal Testing**, create a group with **+**, and add yourself. On your iPhone, install **TestFlight** from the App Store and open the invitation. Every run uploads a new build, numbered by the run.
 
-## 7. Check it on your iPhone
+## 7. Check it on your iPhone, and record it
+
+App Review asks a new developer account for a screen recording made on a real iPhone running the latest iOS, so update the iPhone first (**Settings → General → Software Update**) and record this check:
+
+1. If Control Center has no **Screen Recording** button, add it: swipe down from the top-right corner, tap **+**, then **Add a Control** and choose **Screen Recording**.
+2. Close cobalt if it is open, and turn the volume up. The recording keeps the app's sound.
+3. Swipe down from the top-right corner and tap the record button. After the countdown, go to the Home Screen and open cobalt: the recording must begin with the app opening.
+4. Go through a session as the notes in step 8 describe it: a few pages, one page left to breathe, night and day, the × and the summary, **Done**, **Memory → Export**, **Settings** and **About**. Two minutes or so is enough.
+5. Tap the red indicator at the top of the screen, then **Stop**. The video is saved in Photos.
 
 These parts can only be tried on a real iPhone:
 
@@ -147,13 +155,43 @@ scroll,swipe,feed,chill,vibes,aesthetic,cozy,ad-free,relax,unwind,soothing,sound
 | App Privacy | **Get Started → No, we do not collect data from this app** ("Data Not Collected") |
 | Encryption | nothing to answer: the app declares that it uses no non-exempt encryption |
 
-**App Review Information:** no sign-in is needed. Add a contact name, a phone number and your own work email for Apple's reviewer (they are not shown on the App Store; the public pages keep info@acolorcompany.com), and these notes:
+**App Review Information:** no sign-in is needed. Add a contact name, a phone number and your own work email for Apple's reviewer (they are not shown on the App Store; the public pages keep info@acolorcompany.com). Under **Attachment**, add the recording from step 7. Then paste these notes, which answer the questions App Review asks a new developer account (copy them from the box, so the line breaks stay):
 
-> cobalt needs no account and has no sign-in. It opens straight into a session of full-screen colors and soft tones. Swipe up, or tap the arrow at the bottom, for the next page. Swipe right for night colors and left for day. The × at the top right ends the session and shows its summary. Sound starts as the app opens, so please turn the volume up. From Done for now, Memory shows what the app has learned and can export it through the share sheet. Everything is stored on the device; the app makes no network requests.
+```text
+cobalt needs no account and has no sign-in. Answers to App Review's questions:
+
+1. Screen recording
+Attached. It was made on an iPhone running the latest iOS. It goes from TestFlight to the Home Screen, opens cobalt, and shows a typical session: swiping through pages, a page breathing, night and day colors, ending the session and its summary, Memory with Export through the share sheet, Settings and About. cobalt has no accounts, no user-generated content and no paid content or In-App Purchases, so there are none of those flows to show.
+
+2. Purpose and audience
+Many people scroll social feeds out of habit when they are tired, stressed or trying to fall asleep, and those feeds are built to keep them alert. cobalt keeps the familiar gesture, swiping up through a full-screen feed, but every page is one color with a soft musical tone. As a session goes on, the colors soften and move from warm to cool, the tones get lower and quieter, and the pages slow into a breathing rhythm. It is for teens and adults who want a few calm minutes on their phone, especially before sleep, with no ads, account, notifications or tracking. It is a lifestyle app, not a medical one, and makes no medical or therapeutic claims.
+
+3. Setup and main features
+There is nothing to set up: no login and no sample files. cobalt opens straight into a session, and sound starts with the first page, so please turn the volume up.
+- Swipe up, or tap the arrow at the bottom, for the next page.
+- Stay on a page and it breathes: its tone repeats, each breath longer and softer. After three minutes without a touch it rests; tap to go on.
+- Swipe right for night colors, warm and dim with no blue, and left for day.
+- Tap × at the top right to end the session and see its summary, then Done.
+- Done for now leads to Memory, Settings and About, or to a new session.
+- Memory lists the pages you stayed on, which can return in later sessions. Export saves the memory, sessions and settings in one file through the share sheet; Import reads such a file back after you confirm; Reset memory clears the remembered pages.
+- Settings has the volume, page details, night mode, theme and motion, and a switch for bringing back pages you stayed on.
+- About links to acolorcompany.com, which opens in Safari.
+
+4. External services
+None. cobalt uses no servers, data providers, sign-in, payments, analytics, advertising or AI services, and makes no network requests, so it works offline from the first launch. Its colors and sounds are generated on the device, and what it remembers stays on the device. It is built with Capacitor, an open-source framework, and its fonts are open source under the SIL Open Font License; both are bundled in the app.
+
+5. Regions
+cobalt works the same in every region, with the same features and content. It is in English.
+
+6. Regulated industries and third-party material
+Neither applies. cobalt is not in a regulated industry and contains no third-party content: the app makes every color and sound itself.
+```
 
 ## 9. Submit for review
 
 On the version page, under **Build**, choose the build from TestFlight. Click **Add for Review**, then **Submit to App Review**. Review usually takes a day or two, and Apple emails the result.
+
+Apple may answer a first submission from a new developer account with **Guideline 2.1 – Information Needed** and mark the version **Rejected** until it has a screen recording and answers about the app. The notes in step 8 hold those answers. Open **App Review** in the app's sidebar, open the submission and click **Reply to App Review**. Paste the notes, add the recording with **Attach File**, and click **Reply**. Then, on the version page, click **Update Review**: it puts the version back in the submission as **Ready for Review**, and only then does **Resubmit to App Review**, at the top of the submission, work.
 
 If Apple answers that cobalt is a website in an app (guideline 4.2, minimum functionality), reply in the message that comes with the decision: cobalt is not a website. Its colors and sound are generated on the device, it works offline from the first launch, and it uses the phone itself: the screen stays on during a session, the bottom edge's swipe stays in the feed, the Taptic Engine taps, and exports go through the share sheet.
 
